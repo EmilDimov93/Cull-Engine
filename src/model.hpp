@@ -7,6 +7,8 @@
 #include <array>
 #include <cstdint>
 
+#include "matrix.hpp"
+
 namespace CL
 {
     struct Vec3
@@ -23,13 +25,11 @@ namespace CL
         Vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) : x(x), y(y), z(z), w(w) {}
     };
 
-    using Mat4 = std::array<Vec4, 4>;
-
     struct Vertex
     {
-        float x, y, z;
+        Vec3 pos;
 
-        Vertex(float x = 0.f, float y = 0.f, float z = 0.f) : x(x), y(y), z(z) {}
+        Vertex(Vec3 pos) : pos(pos) {}
     };
 
     struct Material

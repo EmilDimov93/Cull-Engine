@@ -12,6 +12,8 @@ namespace CL
     public:
         Renderer();
 
+        void tick();
+
         void addModel(Model &model);
     private:
         std::vector<Model> models;

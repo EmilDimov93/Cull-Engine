@@ -9,6 +9,14 @@ namespace CL
     {
     }
 
+    void Renderer::tick()
+    {
+        for(Model model : models)
+        {
+            // Draw model
+        }
+    }
+
     void Renderer::addModel(Model &model)
     {
         models.push_back(model);

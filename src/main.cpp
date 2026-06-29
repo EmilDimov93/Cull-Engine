@@ -13,9 +13,9 @@ int main()
 
     Renderer renderer;
 
-    Vertex v1(0.f, 1.f, 0.f);
-    Vertex v2(1.f, 0.f, 0.f);
-    Vertex v3(1.f, 1.f, 0.f);
+    Vertex v1({0.f, 1.f, 0.f});
+    Vertex v2({1.f, 0.f, 0.f});
+    Vertex v3({1.f, 1.f, 0.f});
     std::vector<Vertex> vertices = {v1, v2, v3};
 
     std::vector<uint32_t> indices = {0, 1, 2};
