@@ -5,5 +5,12 @@
 
 namespace CL
 {
-    
+    Renderer::Renderer()
+    {
+    }
+
+    void Renderer::addModel(Model &model)
+    {
+        models.push_back(model);
+    }
 }

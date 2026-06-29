@@ -5,9 +5,15 @@
 
 #include "model.hpp"
 
-#include <iostream>
-
 namespace CL
 {
-    
+    class Renderer
+    {
+    public:
+        Renderer();
+
+        void addModel(Model &model);
+    private:
+        std::vector<Model> models;
+    };
 }
