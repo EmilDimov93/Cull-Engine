@@ -5,9 +5,23 @@
 
 #include <cmath>
 
-namespace CL
+namespace clm
 {
-    struct Mat4
+    struct vec3
+    {
+        float x, y, z;
+
+        vec3(float x = 0.f, float y = 0.f, float z = 0.f) : x(x), y(y), z(z) {}
+    };
+
+    struct vec4
+    {
+        float x, y, z, w;
+
+        vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) : x(x), y(y), z(z), w(w) {}
+    };
+
+    struct mat4
     {
     private:
         float mat[4][4] = {{1, 0, 0, 0},
@@ -21,27 +35,27 @@ namespace CL
         Column &operator[](int col) { return mat[col]; }
         const Column &operator[](int col) const { return mat[col]; }
 
-        Mat4 operator+(const Mat4 &other) const
+        mat4 operator+(const mat4 &other) const
         {
-            Mat4 result;
+            mat4 result;
             for (int col = 0; col < 4; ++col)
                 for (int row = 0; row < 4; ++row)
                     result.mat[col][row] = mat[col][row] + other.mat[col][row];
             return result;
         };
 
-        Mat4 operator-(const Mat4 &other) const
+        mat4 operator-(const mat4 &other) const
         {
-            Mat4 result;
+            mat4 result;
             for (int col = 0; col < 4; ++col)
                 for (int row = 0; row < 4; ++row)
                     result.mat[col][row] = mat[col][row] - other.mat[col][row];
             return result;
         };
 
-        Mat4 operator*(const Mat4 &other) const
+        mat4 operator*(const mat4 &other) const
         {
-            Mat4 result;
+            mat4 result;
             for (int col = 0; col < 4; ++col)
                 for (int row = 0; row < 4; ++row)
                     result.mat[col][row] = mat[0][row] * other.mat[col][0] +
@@ -52,9 +66,9 @@ namespace CL
         };
     };
 
-    inline Mat4 translationMat(float x, float y, float z)
+    inline mat4 translationMat(float x, float y, float z)
     {
-        Mat4 m;
+        mat4 m;
 
         m[3][0] = x;
         m[3][1] = y;
@@ -63,9 +77,9 @@ namespace CL
         return m;
     }
 
-    inline Mat4 rotationMat(float x, float y, float z)
+    inline mat4 rotationMat(float x, float y, float z)
     {
-        Mat4 m;
+        mat4 m;
 
         float cosX = std::cos(x);
         float sinX = std::sin(x);
@@ -89,9 +103,9 @@ namespace CL
         return m;
     }
 
-    inline Mat4 scaleMat(float x, float y, float z)
+    inline mat4 scaleMat(float x, float y, float z)
     {
-        Mat4 m;
+        mat4 m;
 
         m[0][0] = x;
         m[1][1] = y;
@@ -100,7 +114,7 @@ namespace CL
         return m;
     }
 
-    inline Mat4 scaleMat(float uniformScale)
+    inline mat4 scaleMat(float uniformScale)
     {
         return scaleMat(uniformScale, uniformScale, uniformScale);
     }

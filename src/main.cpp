@@ -20,11 +20,11 @@ int main()
 
     std::vector<uint32_t> indices = {0, 1, 2};
 
-    std::vector<Material> materials = {Material(Vec4(1.f, 0.f, 0.f, 1.f))};
+    std::vector<Material> materials = {Material(clm::vec4(1.f, 0.f, 0.f, 1.f))};
 
     std::vector<Mesh> meshes = {Mesh(vertices, indices, 0)};
 
-    Model model(meshes, materials, Mat4());
+    Model model(meshes, materials, clm::mat4());
 
     renderer.addModel(model);
 }
