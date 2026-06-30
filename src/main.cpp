@@ -9,24 +9,27 @@ using namespace CL;
 
 int main()
 {
-    std::cout << "Running";
+    std::cout << "Started" << std::endl;
 
     Renderer renderer;
 
-    Vertex v1({0.f, 1.f, 0.f});
-    Vertex v2({1.f, 0.f, 0.f});
-    Vertex v3({1.f, 1.f, 0.f});
-    std::vector<Vertex> vertices = {v1, v2, v3};
+    std::vector<Vertex> vertices = {{{45.f, 30.f, 0.f}},
+                                    {{30.f, 60.f, 0.f}},
+                                    {{60.f, 60.f, 0.f}}};
 
     std::vector<uint32_t> indices = {0, 1, 2};
 
-    std::vector<Material> materials = {Material(clm::vec4(1.f, 0.f, 0.f, 1.f))};
+    std::vector<Material> materials;
+    materials.emplace_back(clm::vec4(255.f, 0.f, 0.f, 255.f));
 
-    std::vector<Mesh> meshes = {Mesh(vertices, indices, 0)};
+    std::vector<Mesh> meshes;
+    meshes.emplace_back(vertices, indices, 0);
 
     Model model(meshes, materials, clm::mat4());
 
     renderer.addModel(model);
 
-    renderer.renderModelsToImage("build/img.ppm", 100, 100);
+    renderer.renderModelsToImage("build/img.ppm");
+
+    std::cout << "Finished";
 }

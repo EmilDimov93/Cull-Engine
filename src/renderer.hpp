@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <cstdint>
+#include <string>
 
 namespace CL
 {
@@ -47,10 +48,16 @@ namespace CL
     class Renderer
     {
     public:
-        void renderModelsToImage(const char *filePath, int width, int height);
+        void renderModelsToImage(std::string filePath);
 
         void addModel(Model &model);
     private:
         std::vector<Model> models;
+
+        static constexpr uint32_t width = 100;
+        static constexpr uint32_t height = 100;
+
+        const std::vector<unsigned char> getImage();
+        void uploadImage(std::vector<unsigned char> image, std::string filePath);
     };
 }
