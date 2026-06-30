@@ -27,4 +27,6 @@ int main()
     Model model(meshes, materials, clm::mat4());
 
     renderer.addModel(model);
+
+    renderer.renderModelsToImage("build/img.ppm", 100, 100);
 }

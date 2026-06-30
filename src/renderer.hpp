@@ -47,9 +47,7 @@ namespace CL
     class Renderer
     {
     public:
-        Renderer();
-
-        void tick();
+        void renderModelsToImage(const char *filePath, int width, int height);
 
         void addModel(Model &model);
     private:
