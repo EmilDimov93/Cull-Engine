@@ -12,6 +12,18 @@ namespace clm
         float x, y, z;
 
         vec3(float x = 0.f, float y = 0.f, float z = 0.f) : x(x), y(y), z(z) {}
+
+        float dot(vec3 other) const
+        {
+            return x * other.x + y * other.y + z * other.z;
+        }
+
+        vec3 cross(vec3 other) const
+        {
+            return vec3(y * other.z - z * other.y,
+                        z * other.x - x * other.z,
+                        x * other.y - y * other.x);
+        }
     };
 
     struct vec4
