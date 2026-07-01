@@ -3,13 +3,12 @@
 
 #include "renderer.hpp"
 
-#include <fstream>
-#include <algorithm>
 #include <array>
+#include <algorithm>
 
 namespace CL
 {
-    void fillTriangle(std::vector<unsigned char> &image, uint32_t width, uint32_t height, std::array<clm::vec3, 3> pts, Material material)
+    void fillTriangle(std::vector<unsigned char> &image, uint32_t width, uint32_t height, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material)
     {
         int minX = std::max(0.f, std::min({pts[0].x, pts[1].x, pts[2].x}));
         int maxX = std::min(static_cast<float>(width - 1), std::max({pts[0].x, pts[1].x, pts[2].x}));
@@ -20,6 +19,10 @@ namespace CL
         {
             return (long long)(x2 - x1) * (py - y1) - (long long)(y2 - y1) * (px - x1);
         };
+
+        long long area = edgeFunction(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y); // CHANGED
+        if (area == 0)
+            return;
 
         for (int x = minX; x <= maxX; ++x)
         {
@@ -34,23 +37,34 @@ namespace CL
 
                 if (!(hasNeg && hasPos))
                 {
-                    image[width * y * 3 + x * 3] = material.color.x;
-                    image[width * y * 3 + x * 3 + 1] = material.color.y;
-                    image[width * y * 3 + x * 3 + 2] = material.color.z;
+                    float b0 = static_cast<float>(w0) / area;
+                    float b1 = static_cast<float>(w1) / area;
+                    float b2 = static_cast<float>(w2) / area;
+                    float depth = b0 * pts[0].z + b1 * pts[1].z + b2 * pts[2].z;
+
+                    uint32_t pixelIndex = width * y + x;
+                    if (depth < depthBuffer[pixelIndex])
+                    {
+                        depthBuffer[pixelIndex] = depth;
+                        image[pixelIndex * 3] = material.color.x;
+                        image[pixelIndex * 3 + 1] = material.color.y;
+                        image[pixelIndex * 3 + 2] = material.color.z;
+                    }
                 }
             }
         }
     }
 
-    const std::vector<unsigned char> Renderer::getImage()
+    const std::vector<unsigned char> Renderer::getImage(uint32_t width, uint32_t height)
     {
-        std::vector<unsigned char> image(100 * 100 * 3);
+        std::vector<unsigned char> image(width * height * 3);
+        std::vector<float> depthBuffer(width * height, std::numeric_limits<float>::infinity());
 
-        for (uint32_t i = 0; i < 100 * 100 * 3; i += 3)
+        for (uint32_t i = 0; i < width * height * 3; i += 3)
         {
-            image[i] = 0;
-            image[i + 1] = 0;
-            image[i + 2] = 0;
+            image[i] = clearColor.x;
+            image[i + 1] = clearColor.y;
+            image[i + 2] = clearColor.z;
         }
 
         for (const Model &model : models)
@@ -62,11 +76,14 @@ namespace CL
                 std::array<clm::vec3, 3> points;
                 for (uint32_t index : mesh.indices)
                 {
-                    points[currPoint] = mesh.vertices[index].pos;
+                    clm::vec3 world = model.transform * mesh.vertices[index].pos;
+                    points[currPoint] = {(world.x * 0.5f + 0.5f) * width,
+                                         (0.5f - world.y * 0.5f) * height,
+                                         world.z};
 
                     if (currPoint == 2)
                     {
-                        fillTriangle(image, width, height, points, material);
+                        fillTriangle(image, width, height, points, depthBuffer, material);
                         currPoint = 0;
                     }
                     else
@@ -80,20 +97,21 @@ namespace CL
         return image;
     }
 
-    void Renderer::uploadImage(std::vector<unsigned char> image, std::string filePath)
+    void Renderer::uploadImage(std::vector<unsigned char> image, std::string filePath, uint32_t width, uint32_t height)
     {
         std::ofstream file(filePath, std::ios::binary);
 
-        file << "P6\n" << width << ' ' << height << "\n255\n";
+        file << "P6\n"
+             << width << ' ' << height << "\n255\n";
 
         file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(width) * height * 3);
     }
 
-    void Renderer::renderModelsToImage(std::string filePath)
+    void Renderer::renderModelsToImage(std::string filePath, uint32_t width, uint32_t height)
     {
-        std::vector<unsigned char> image = getImage();
+        std::vector<unsigned char> image = getImage(width, height);
 
-        uploadImage(image, filePath);
+        uploadImage(image, filePath, width, height);
     }
 
     void Renderer::addModel(Model &model)

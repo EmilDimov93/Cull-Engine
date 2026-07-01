@@ -8,6 +8,7 @@
 #include <vector>
 #include <cstdint>
 #include <string>
+#include <fstream>
 
 namespace CL
 {
@@ -22,7 +23,7 @@ namespace CL
     {
         clm::vec4 color;
 
-        Material(clm::vec4 color) : color(color) {}
+        Material(clm::vec4 color = {1.f, 1.f, 1.f, 1.f}) : color(color) {}
     };
 
     struct Mesh
@@ -42,22 +43,24 @@ namespace CL
 
         clm::mat4 transform;
 
-        Model(const std::vector<Mesh> &meshes, const std::vector<Material> &materials, clm::mat4 transform) : meshes(meshes), materials(materials), transform(transform) {}
+        Model(const std::vector<Mesh> &meshes, const std::vector<Material> &materials, clm::mat4 transform = clm::mat4()) : meshes(meshes), materials(materials), transform(transform) {}
     };
 
     class Renderer
     {
     public:
-        void renderModelsToImage(std::string filePath);
+        Renderer(clm::vec3 clearColor = {0.f, 0.f, 0.f}) : clearColor(clearColor) {}
+
+        void renderModelsToImage(std::string filePath, uint32_t width, uint32_t height);
 
         void addModel(Model &model);
+        [[nodiscard]] Model loadOBJ(const std::string &filePath);
     private:
         std::vector<Model> models;
 
-        static constexpr uint32_t width = 100;
-        static constexpr uint32_t height = 100;
+        clm::vec3 clearColor;
 
-        const std::vector<unsigned char> getImage();
-        void uploadImage(std::vector<unsigned char> image, std::string filePath);
+        const std::vector<unsigned char> getImage(uint32_t width, uint32_t height);
+        void uploadImage(std::vector<unsigned char> image, std::string filePath, uint32_t width, uint32_t height);
     };
 }

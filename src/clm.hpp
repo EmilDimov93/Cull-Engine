@@ -64,6 +64,13 @@ namespace clm
                                            mat[3][row] * other.mat[col][3];
             return result;
         };
+
+        vec3 operator*(const vec3 &v) const
+        {
+            return vec3(mat[0][0] * v.x + mat[1][0] * v.y + mat[2][0] * v.z + mat[3][0],
+                        mat[0][1] * v.x + mat[1][1] * v.y + mat[2][1] * v.z + mat[3][1],
+                        mat[0][2] * v.x + mat[1][2] * v.y + mat[2][2] * v.z + mat[3][2]);
+        }
     };
 
     inline mat4 translationMat(float x, float y, float z)

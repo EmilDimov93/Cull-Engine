@@ -3,33 +3,18 @@
 
 #include "renderer.hpp"
 
-#include <iostream>
-
 using namespace CL;
 
 int main()
 {
-    std::cout << "Started" << std::endl;
+    Renderer renderer({0.f, 102.f, 0.f});
 
-    Renderer renderer;
+    clm::mat4 transform = clm::mat4() * clm::translationMat(0.f, -0.5f, 10.f) * clm::rotationMat(0.f, 3.4f, 0.f) * clm::scaleMat(0.5f);
 
-    std::vector<Vertex> vertices = {{{45.f, 30.f, 0.f}},
-                                    {{30.f, 60.f, 0.f}},
-                                    {{60.f, 60.f, 0.f}}};
-
-    std::vector<uint32_t> indices = {0, 1, 2};
-
-    std::vector<Material> materials;
-    materials.emplace_back(clm::vec4(255.f, 0.f, 0.f, 255.f));
-
-    std::vector<Mesh> meshes;
-    meshes.emplace_back(vertices, indices, 0);
-
-    Model model(meshes, materials, clm::mat4());
+    Model model = renderer.loadOBJ("build/car/car.obj");
+    model.transform = transform;
 
     renderer.addModel(model);
 
-    renderer.renderModelsToImage("build/img.ppm");
-
-    std::cout << "Finished";
+    renderer.renderModelsToImage("build/img.ppm", 1000, 1000);
 }
