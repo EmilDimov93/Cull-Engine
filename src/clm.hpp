@@ -13,6 +13,21 @@ namespace clm
 
         vec3(float x = 0.f, float y = 0.f, float z = 0.f) : x(x), y(y), z(z) {}
 
+        vec3 operator*(const vec3 &other) const
+        {
+            return vec3(x * other.x, y * other.y, z * other.z);
+        }
+
+        vec3 operator+(const vec3 &other) const
+        {
+            return vec3(x + other.x, y + other.y, z + other.z);
+        }
+
+        vec3 operator-(const vec3 &other) const
+        {
+            return vec3(x - other.x, y - other.y, z - other.z);
+        }
+
         float dot(vec3 other) const
         {
             return x * other.x + y * other.y + z * other.z;
@@ -23,6 +38,17 @@ namespace clm
             return vec3(y * other.z - z * other.y,
                         z * other.x - x * other.z,
                         x * other.y - y * other.x);
+        }
+
+        float length() const
+        {
+            return std::sqrt(x * x + y * y + z * z);
+        }
+
+        vec3 normalized() const
+        {
+            float len = length();
+            return vec3(x / len, y / len, z / len);
         }
     };
 
