@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <string>
 #include <fstream>
+#include <array>
+#include <algorithm>
 
 namespace CL
 {
@@ -46,21 +48,29 @@ namespace CL
         Model(const std::vector<Mesh> &meshes, const std::vector<Material> &materials, clm::mat4 transform = clm::mat4()) : meshes(meshes), materials(materials), transform(transform) {}
     };
 
+    enum RenderMode
+    {
+        RENDER_MODE_RASTERIZATION,
+        RENDER_MODE_RAY_TRACING
+    };
+
     class Renderer
     {
     public:
         Renderer(clm::vec3 clearColor = {0.f, 0.f, 0.f}) : clearColor(clearColor) {}
 
-        void renderModelsToImage(std::string filePath, uint32_t width, uint32_t height);
+        void renderModelsToImage(std::string filePath, uint32_t width, uint32_t height, RenderMode renderMode);
 
         void addModel(Model &model);
         [[nodiscard]] Model loadOBJ(const std::string &filePath);
     private:
+        static constexpr float FOV = clm::PI / 3;
+
         std::vector<Model> models;
 
         clm::vec3 clearColor;
 
-        const std::vector<unsigned char> getImage(uint32_t width, uint32_t height);
-        void uploadImage(std::vector<unsigned char> image, std::string filePath, uint32_t width, uint32_t height);
+        const std::vector<unsigned char> getImageRasterized(uint32_t width, uint32_t height);
+        const std::vector<unsigned char> getImageRayTraced(uint32_t width, uint32_t height);
     };
 }

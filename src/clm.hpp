@@ -7,6 +7,8 @@
 
 namespace clm
 {
+    static constexpr float PI = 3.14159265f;
+
     struct vec3
     {
         float x, y, z;

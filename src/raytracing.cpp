@@ -1,0 +1,119 @@
+// Copyright 2025 Emil Dimov
+// Licensed under the Apache License, Version 2.0
+
+#include "renderer.hpp"
+
+#include <iostream>
+#include <thread>
+
+namespace CL
+{
+    bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
+    {
+        constexpr float EPSILON = 0.0000001f;
+
+        clm::vec3 edge01 = pts[1] - pts[0];
+        clm::vec3 edge02 = pts[2] - pts[0];
+
+        clm::vec3 rayCrossEdge02 = rayVector.cross(edge02);
+
+        float determinant = edge01.dot(rayCrossEdge02);
+
+        if (determinant > -EPSILON && determinant < EPSILON)
+            return false;
+
+        float inverseDeterminant = 1 / determinant;
+        clm::vec3 vertex0ToRayOrigin = rayOrigin - pts[0];
+        float barycentricU = inverseDeterminant * vertex0ToRayOrigin.dot(rayCrossEdge02);
+
+        if (barycentricU < 0.0 || barycentricU > 1.0)
+            return false;
+
+        clm::vec3 originCrossEdge01 = vertex0ToRayOrigin.cross(edge01);
+
+        float barycentricV = inverseDeterminant * rayVector.dot(originCrossEdge01);
+
+        if (barycentricV < 0.0 || barycentricU + barycentricV > 1.0)
+            return false;
+
+        float rayDistance = inverseDeterminant * edge02.dot(originCrossEdge01);
+
+        if (rayDistance > EPSILON) // ray intersection
+        {
+            outIntersectionPoint = rayOrigin + (rayVector.normalized() * (rayDistance * rayVector.length()));
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    const std::vector<unsigned char> Renderer::getImageRayTraced(uint32_t width, uint32_t height)
+    {
+        std::vector<unsigned char> image(width * height * 3);
+
+        const clm::vec3 cameraPosition(0.f, 0.f, 0.f);
+        const float tanHalfFov = std::tan(FOV * 0.5f);
+        const float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+
+        const unsigned int threadCount = std::max(1u, std::thread::hardware_concurrency());
+        std::vector<std::thread> workers;
+        workers.reserve(threadCount);
+
+        auto renderRows = [&](unsigned int threadIndex)
+        {
+            for (uint32_t pixelY = threadIndex; pixelY < height; pixelY += threadCount)
+            {
+                for (uint32_t pixelX = 0; pixelX < width; pixelX++)
+                {
+                    const float ndcX = (2.f * (pixelX + 0.5f) / width - 1.f) * aspectRatio * tanHalfFov;
+                    const float ndcY = (1.f - 2.f * (pixelY + 0.5f) / height) * tanHalfFov;
+
+                    const clm::vec3 rayDirection = clm::vec3(ndcX, ndcY, 1.f).normalized();
+
+                    clm::vec4 pixelColor = {clearColor.x, clearColor.y, clearColor.z, 1.f};
+                    float closestDistance = std::numeric_limits<float>::max();
+
+                    for (const Model &model : models)
+                    {
+                        for (const Mesh &mesh : model.meshes)
+                        {
+                            for (size_t indexOffset = 0; indexOffset + 2 < mesh.indices.size(); indexOffset += 3)
+                            {
+                                const std::array<clm::vec3, 3> pts = {
+                                    model.transform * mesh.vertices[mesh.indices[indexOffset + 0]].pos,
+                                    model.transform * mesh.vertices[mesh.indices[indexOffset + 1]].pos,
+                                    model.transform * mesh.vertices[mesh.indices[indexOffset + 2]].pos};
+
+                                clm::vec3 intersectionPoint;
+                                if (RayIntersectsTriangle(cameraPosition, rayDirection, pts, intersectionPoint))
+                                {
+                                    const float distance = (intersectionPoint - cameraPosition).length();
+                                    if (distance < closestDistance)
+                                    {
+                                        closestDistance = distance;
+                                        pixelColor = model.materials[mesh.materialIndex].color;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    const size_t pixelIndex = (static_cast<size_t>(pixelY) * width + pixelX) * 3;
+                    image[pixelIndex] = static_cast<unsigned char>(pixelColor.x);
+                    image[pixelIndex + 1] = static_cast<unsigned char>(pixelColor.y);
+                    image[pixelIndex + 2] = static_cast<unsigned char>(pixelColor.z);
+                }
+            }
+        };
+
+        for (unsigned int threadIndex = 0; threadIndex < threadCount; ++threadIndex)
+            workers.emplace_back(renderRows, threadIndex);
+
+        for (std::thread &worker : workers)
+            worker.join();
+
+        return image;
+    }
+}
