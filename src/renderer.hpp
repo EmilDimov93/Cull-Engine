@@ -70,7 +70,7 @@ namespace CL
 
         clm::vec3 clearColor;
 
-        const std::vector<unsigned char> getImageRasterized(uint32_t width, uint32_t height);
-        const std::vector<unsigned char> getImageRayTraced(uint32_t width, uint32_t height);
+        const std::vector<uint8_t> getImageRasterized(uint32_t width, uint32_t height);
+        const std::vector<uint8_t> getImageRayTraced(uint32_t width, uint32_t height);
     };
 }

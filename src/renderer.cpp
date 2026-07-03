@@ -7,7 +7,7 @@ namespace CL
 {
     void Renderer::renderModelsToImage(std::string filePath, uint32_t width, uint32_t height, RenderMode renderMode)
     {
-        std::vector<unsigned char> image;
+        std::vector<uint8_t> image;
         switch (renderMode)
         {
         case RENDER_MODE_RASTERIZATION:

@@ -3,7 +3,6 @@
 
 #include "renderer.hpp"
 
-#include <iostream>
 #include <thread>
 
 namespace CL
@@ -38,7 +37,7 @@ namespace CL
 
         float rayDistance = inverseDeterminant * edge02.dot(originCrossEdge01);
 
-        if (rayDistance > EPSILON) // ray intersection
+        if (rayDistance > EPSILON)
         {
             outIntersectionPoint = rayOrigin + (rayVector.normalized() * (rayDistance * rayVector.length()));
             return true;
@@ -49,9 +48,9 @@ namespace CL
         }
     }
 
-    const std::vector<unsigned char> Renderer::getImageRayTraced(uint32_t width, uint32_t height)
+    const std::vector<uint8_t> Renderer::getImageRayTraced(uint32_t width, uint32_t height)
     {
-        std::vector<unsigned char> image(width * height * 3);
+        std::vector<uint8_t> image(width * height * 3);
 
         const clm::vec3 cameraPosition(0.f, 0.f, 0.f);
         const float tanHalfFov = std::tan(FOV * 0.5f);
@@ -101,9 +100,9 @@ namespace CL
                     }
 
                     const size_t pixelIndex = (static_cast<size_t>(pixelY) * width + pixelX) * 3;
-                    image[pixelIndex] = static_cast<unsigned char>(pixelColor.x);
-                    image[pixelIndex + 1] = static_cast<unsigned char>(pixelColor.y);
-                    image[pixelIndex + 2] = static_cast<unsigned char>(pixelColor.z);
+                    image[pixelIndex] = static_cast<uint8_t>(pixelColor.x);
+                    image[pixelIndex + 1] = static_cast<uint8_t>(pixelColor.y);
+                    image[pixelIndex + 2] = static_cast<uint8_t>(pixelColor.z);
                 }
             }
         };

@@ -5,7 +5,7 @@
 
 namespace CL
 {
-    void fillTriangle(std::vector<unsigned char> &image, uint32_t width, uint32_t height, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material)
+    void fillTriangle(std::vector<uint8_t> &image, uint32_t width, uint32_t height, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material)
     {
         int minX = std::max(0.f, std::min({pts[0].x, pts[1].x, pts[2].x}));
         int maxX = std::min(static_cast<float>(width - 1), std::max({pts[0].x, pts[1].x, pts[2].x}));
@@ -52,9 +52,9 @@ namespace CL
         }
     }
 
-    const std::vector<unsigned char> Renderer::getImageRasterized(uint32_t width, uint32_t height)
+    const std::vector<uint8_t> Renderer::getImageRasterized(uint32_t width, uint32_t height)
     {
-        std::vector<unsigned char> image(width * height * 3);
+        std::vector<uint8_t> image(width * height * 3);
         std::vector<float> depthBuffer(width * height, std::numeric_limits<float>::infinity());
 
         for (uint32_t i = 0; i < width * height * 3; i += 3)

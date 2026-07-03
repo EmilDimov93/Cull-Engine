@@ -6,5 +6,4 @@ Write-Host "Running..." -ForegroundColor Green
 
 Write-Host "Done" -ForegroundColor Red
 
-./build/rasterized.ppm
-./build/raytraced.ppm
+./build/img.ppm
