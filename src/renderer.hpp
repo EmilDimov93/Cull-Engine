@@ -12,6 +12,8 @@
 #include <array>
 #include <algorithm>
 
+#include <GLFW/glfw3.h>
+
 namespace CL
 {
     struct Vertex
@@ -48,23 +50,18 @@ namespace CL
         Model(const std::vector<Mesh> &meshes, const std::vector<Material> &materials, clm::mat4 transform = clm::mat4()) : meshes(meshes), materials(materials), transform(transform) {}
     };
 
-    enum RenderMode
-    {
-        RENDER_MODE_RASTERIZATION,
-        RENDER_MODE_RAY_TRACING
-    };
-
     class Renderer
     {
     public:
-        Renderer(clm::vec3 clearColor = {0.f, 0.f, 0.f}) : clearColor(clearColor) {}
-
-        void renderModelsToImage(std::string filePath, uint32_t width, uint32_t height, RenderMode renderMode);
+        Renderer(clm::vec3 clearColor = {0.f, 0.f, 0.f});
+        ~Renderer();
 
         void addModel(Model &model);
         [[nodiscard]] Model loadOBJ(const std::string &filePath);
 
         void setVignetteStrength(float vignetteStrength) { this->vignetteStrength = vignetteStrength; }
+
+        void run();
     private:
         static constexpr float FOV = clm::PI / 3;
 
@@ -74,7 +71,10 @@ namespace CL
 
         float vignetteStrength = 0.f;
 
-        const std::vector<uint8_t> getImageRasterized(uint32_t width, uint32_t height);
-        const std::vector<uint8_t> getImageRayTraced(uint32_t width, uint32_t height);
+        GLFWwindow *window;
+        uint32_t windowWidth = 1000, windowHeight = 1000;
+
+        [[nodiscard]] const std::vector<uint8_t> getImageRasterized();
+        [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(uint32_t width, uint32_t height);
     };
 }

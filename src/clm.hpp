@@ -15,39 +15,39 @@ namespace clm
 
         vec3(float x = 0.f, float y = 0.f, float z = 0.f) : x(x), y(y), z(z) {}
 
-        vec3 operator*(const vec3 &other) const
+        [[nodiscard]] vec3 operator*(const vec3 &other) const
         {
             return vec3(x * other.x, y * other.y, z * other.z);
         }
 
-        vec3 operator+(const vec3 &other) const
+        [[nodiscard]] vec3 operator+(const vec3 &other) const
         {
             return vec3(x + other.x, y + other.y, z + other.z);
         }
 
-        vec3 operator-(const vec3 &other) const
+        [[nodiscard]] vec3 operator-(const vec3 &other) const
         {
             return vec3(x - other.x, y - other.y, z - other.z);
         }
 
-        float dot(vec3 other) const
+        [[nodiscard]] float dot(vec3 other) const
         {
             return x * other.x + y * other.y + z * other.z;
         }
 
-        vec3 cross(vec3 other) const
+        [[nodiscard]] vec3 cross(vec3 other) const
         {
             return vec3(y * other.z - z * other.y,
                         z * other.x - x * other.z,
                         x * other.y - y * other.x);
         }
 
-        float length() const
+        [[nodiscard]] float length() const
         {
             return std::sqrt(x * x + y * y + z * z);
         }
 
-        vec3 normalized() const
+        [[nodiscard]] vec3 normalized() const
         {
             float len = length();
             return vec3(x / len, y / len, z / len);
@@ -75,7 +75,7 @@ namespace clm
         Column &operator[](int col) { return mat[col]; }
         const Column &operator[](int col) const { return mat[col]; }
 
-        mat4 operator+(const mat4 &other) const
+        [[nodiscard]] mat4 operator+(const mat4 &other) const
         {
             mat4 result;
             for (int col = 0; col < 4; ++col)
@@ -84,7 +84,7 @@ namespace clm
             return result;
         };
 
-        mat4 operator-(const mat4 &other) const
+        [[nodiscard]] mat4 operator-(const mat4 &other) const
         {
             mat4 result;
             for (int col = 0; col < 4; ++col)
@@ -93,7 +93,7 @@ namespace clm
             return result;
         };
 
-        mat4 operator*(const mat4 &other) const
+        [[nodiscard]] mat4 operator*(const mat4 &other) const
         {
             mat4 result;
             for (int col = 0; col < 4; ++col)
@@ -105,7 +105,7 @@ namespace clm
             return result;
         };
 
-        vec3 operator*(const vec3 &v) const
+        [[nodiscard]] vec3 operator*(const vec3 &v) const
         {
             return vec3(mat[0][0] * v.x + mat[1][0] * v.y + mat[2][0] * v.z + mat[3][0],
                         mat[0][1] * v.x + mat[1][1] * v.y + mat[2][1] * v.z + mat[3][1],
@@ -113,7 +113,7 @@ namespace clm
         }
     };
 
-    inline mat4 translationMat(float x, float y, float z)
+    [[nodiscard]] inline mat4 translationMat(float x, float y, float z)
     {
         mat4 m;
 
@@ -124,7 +124,7 @@ namespace clm
         return m;
     }
 
-    inline mat4 rotationMat(float x, float y, float z)
+    [[nodiscard]] inline mat4 rotationMat(float x, float y, float z)
     {
         mat4 m;
 
@@ -150,7 +150,7 @@ namespace clm
         return m;
     }
 
-    inline mat4 scaleMat(float x, float y, float z)
+    [[nodiscard]] inline mat4 scaleMat(float x, float y, float z)
     {
         mat4 m;
 
@@ -161,7 +161,7 @@ namespace clm
         return m;
     }
 
-    inline mat4 scaleMat(float uniformScale)
+    [[nodiscard]] inline mat4 scaleMat(float uniformScale)
     {
         return scaleMat(uniformScale, uniformScale, uniformScale);
     }

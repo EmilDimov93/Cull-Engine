@@ -16,5 +16,5 @@ int main()
 
     renderer.setVignetteStrength(1.f);
 
-    renderer.renderModelsToImage("build/img.ppm", 500, 500, RENDER_MODE_RASTERIZATION);
+    renderer.run();
 }

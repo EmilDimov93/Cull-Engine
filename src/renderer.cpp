@@ -3,27 +3,70 @@
 
 #include "renderer.hpp"
 
+#include <cstdlib>
+
 namespace CL
 {
-    void Renderer::renderModelsToImage(std::string filePath, uint32_t width, uint32_t height, RenderMode renderMode)
+    Renderer::Renderer(clm::vec3 clearColor) : clearColor(clearColor)
     {
-        std::vector<uint8_t> image;
-        switch (renderMode)
+        if (!glfwInit())
+            exit(1);
+
+        window = glfwCreateWindow(windowWidth, windowHeight, "Ray-Tracer", nullptr, nullptr);
+        if (!window)
+            exit(1);
+
+        glfwMakeContextCurrent(window);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+        glfwSetWindowUserPointer(window, this);
+
+        glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int width, int height)
+                                       {
+            Renderer *r = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
+            r->windowWidth = static_cast<uint32_t>(width);
+            r->windowHeight = static_cast<uint32_t>(height); });
+    }
+
+    Renderer::~Renderer()
+    {
+        if (window)
+            glfwDestroyWindow(window);
+        window = nullptr;
+
+        glfwTerminate();
+    }
+
+    void Renderer::run()
+    {
+        while (!glfwWindowShouldClose(window))
         {
-        case RENDER_MODE_RASTERIZATION:
-            image = getImageRasterized(width, height);
-            break;
-        case RENDER_MODE_RAY_TRACING:
-            image = getImageRayTraced(width, height);
-            break;
+            glfwPollEvents();
+
+            std::vector<uint8_t> image = getImageRasterized();
+
+            glPixelZoom(1.0f, -1.0f);
+            glRasterPos2f(-1.0f, 1.0f);
+            glDrawPixels(windowWidth, windowHeight, GL_RGB, GL_UNSIGNED_BYTE, image.data());
+            glfwSwapBuffers(window);
+            
+            if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
+            {
+                constexpr uint32_t imageSize = 100;
+
+                std::vector<uint8_t> image = getImageRayTraced(imageSize, imageSize);
+
+                std::ofstream file("build/img.ppm", std::ios::binary);
+
+                file << "P6\n"
+                     << imageSize << ' ' << imageSize << "\n255\n";
+
+                file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(imageSize) * imageSize * 3);
+
+                file.close();
+
+                int exitCode = std::system("start build\\img.ppm");
+            }
         }
-
-        std::ofstream file(filePath, std::ios::binary);
-
-        file << "P6\n"
-             << width << ' ' << height << "\n255\n";
-
-        file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(width) * height * 3);
     }
 
     void Renderer::addModel(Model &model)

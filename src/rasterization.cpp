@@ -52,12 +52,12 @@ namespace CL
         }
     }
 
-    const std::vector<uint8_t> Renderer::getImageRasterized(uint32_t width, uint32_t height)
+    const std::vector<uint8_t> Renderer::getImageRasterized()
     {
-        std::vector<uint8_t> image(width * height * 3);
-        std::vector<float> depthBuffer(width * height, std::numeric_limits<float>::infinity());
+        std::vector<uint8_t> image(windowWidth * windowHeight * 3);
+        std::vector<float> depthBuffer(windowWidth * windowHeight, std::numeric_limits<float>::infinity());
 
-        for (uint32_t i = 0; i < width * height * 3; i += 3)
+        for (uint32_t i = 0; i < windowWidth * windowHeight * 3; i += 3)
         {
             image[i] = clearColor.x;
             image[i + 1] = clearColor.y;
@@ -80,8 +80,8 @@ namespace CL
                     const float ndcX = pointsWorld[currPoint].x / (cameraDepth * tanHalfFov);
                     const float ndcY = pointsWorld[currPoint].y / (cameraDepth * tanHalfFov);
 
-                    points[currPoint] = {(ndcX * 0.5f + 0.5f) * width,
-                                         (0.5f - ndcY * 0.5f) * height,
+                    points[currPoint] = {(ndcX * 0.5f + 0.5f) * windowWidth,
+                                         (0.5f - ndcY * 0.5f) * windowHeight,
                                          cameraDepth};
 
                     if (currPoint == 2)
@@ -92,7 +92,7 @@ namespace CL
 
                         float shade = std::max(0.f, worldNormal.dot(clm::vec3(0.f, 1.f, 0.f)));
 
-                        fillTriangle(image, width, height, points, depthBuffer, material, shade);
+                        fillTriangle(image, windowWidth, windowHeight, points, depthBuffer, material, shade);
                         currPoint = 0;
                     }
                     else
