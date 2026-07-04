@@ -5,7 +5,7 @@
 
 namespace CL
 {
-    void fillTriangle(std::vector<uint8_t> &image, uint32_t width, uint32_t height, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material)
+    void fillTriangle(std::vector<uint8_t> &image, uint32_t width, uint32_t height, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
     {
         int minX = std::max(0.f, std::min({pts[0].x, pts[1].x, pts[2].x}));
         int maxX = std::min(static_cast<float>(width - 1), std::max({pts[0].x, pts[1].x, pts[2].x}));
@@ -37,15 +37,15 @@ namespace CL
                     float b0 = static_cast<float>(w0) / area;
                     float b1 = static_cast<float>(w1) / area;
                     float b2 = static_cast<float>(w2) / area;
-                    float depth = 1.f / (b0 * pts[0].z + b1 * pts[1].z + b2 * pts[2].z);
+                    float depth = b0 * pts[0].z + b1 * pts[1].z + b2 * pts[2].z;
 
                     uint32_t pixelIndex = width * y + x;
                     if (depth < depthBuffer[pixelIndex])
                     {
                         depthBuffer[pixelIndex] = depth;
-                        image[pixelIndex * 3] = material.color.x;
-                        image[pixelIndex * 3 + 1] = material.color.y;
-                        image[pixelIndex * 3 + 2] = material.color.z;
+                        image[pixelIndex * 3] = static_cast<uint8_t>(material.color.x * shade);
+                        image[pixelIndex * 3 + 1] = static_cast<uint8_t>(material.color.y * shade);
+                        image[pixelIndex * 3 + 2] = static_cast<uint8_t>(material.color.z * shade);
                     }
                 }
             }
@@ -71,13 +71,14 @@ namespace CL
                 const Material &material = model.materials[mesh.materialIndex];
                 uint32_t currPoint = 0;
                 std::array<clm::vec3, 3> points;
+                std::array<clm::vec3, 3> pointsWorld;
                 for (uint32_t index : mesh.indices)
                 {
-                    clm::vec3 world = model.transform * mesh.vertices[index].pos;
+                    pointsWorld[currPoint] = model.transform * mesh.vertices[index].pos;
                     const float tanHalfFov = std::tan(FOV * 0.5f);
-                    const float cameraDepth = world.z;
-                    const float ndcX = world.x / (cameraDepth * tanHalfFov);
-                    const float ndcY = world.y / (cameraDepth * tanHalfFov);
+                    const float cameraDepth = pointsWorld[currPoint].z;
+                    const float ndcX = pointsWorld[currPoint].x / (cameraDepth * tanHalfFov);
+                    const float ndcY = pointsWorld[currPoint].y / (cameraDepth * tanHalfFov);
 
                     points[currPoint] = {(ndcX * 0.5f + 0.5f) * width,
                                          (0.5f - ndcY * 0.5f) * height,
@@ -85,7 +86,13 @@ namespace CL
 
                     if (currPoint == 2)
                     {
-                        fillTriangle(image, width, height, points, depthBuffer, material);
+                        clm::vec3 edge1 = pointsWorld[1] - pointsWorld[0];
+                        clm::vec3 edge2 = pointsWorld[2] - pointsWorld[0];
+                        clm::vec3 worldNormal = edge1.cross(edge2).normalized();
+
+                        float shade = std::max(0.f, worldNormal.dot(clm::vec3(0.f, 1.f, 0.f)));
+
+                        fillTriangle(image, width, height, points, depthBuffer, material, shade);
                         currPoint = 0;
                     }
                     else
