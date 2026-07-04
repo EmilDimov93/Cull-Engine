@@ -63,12 +63,16 @@ namespace CL
 
         void addModel(Model &model);
         [[nodiscard]] Model loadOBJ(const std::string &filePath);
+
+        void setVignetteStrength(float vignetteStrength) { this->vignetteStrength = vignetteStrength; }
     private:
         static constexpr float FOV = clm::PI / 3;
 
         std::vector<Model> models;
 
         clm::vec3 clearColor;
+
+        float vignetteStrength = 0.f;
 
         const std::vector<uint8_t> getImageRasterized(uint32_t width, uint32_t height);
         const std::vector<uint8_t> getImageRayTraced(uint32_t width, uint32_t height);

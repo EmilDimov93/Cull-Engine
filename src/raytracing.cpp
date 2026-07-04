@@ -99,10 +99,15 @@ namespace CL
                         }
                     }
 
+                    const float smallestDot = clm::vec3((2.f * (0.f + 0.5f) / width - 1.f) * aspectRatio * tanHalfFov, (1.f - 2.f * (0.f + 0.5f) / height) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
+                    const float biggestDot = clm::vec3((2.f * (width / 2.f + 0.5f) / width - 1.f) * aspectRatio * tanHalfFov, (1.f - 2.f * (height / 2.f + 0.5f) / height) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
+                    const float vignette = (rayDirection.dot(clm::vec3(0.f, 0.f, 1.f)) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
+
                     const size_t pixelIndex = (static_cast<size_t>(pixelY) * width + pixelX) * 3;
-                    image[pixelIndex] = static_cast<uint8_t>(pixelColor.x);
-                    image[pixelIndex + 1] = static_cast<uint8_t>(pixelColor.y);
-                    image[pixelIndex + 2] = static_cast<uint8_t>(pixelColor.z);
+
+                    image[pixelIndex] = static_cast<uint8_t>(pixelColor.x * vignette);
+                    image[pixelIndex + 1] = static_cast<uint8_t>(pixelColor.y * vignette);
+                    image[pixelIndex + 2] = static_cast<uint8_t>(pixelColor.z * vignette);
                 }
             }
         };

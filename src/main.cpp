@@ -14,5 +14,7 @@ int main()
 
     renderer.addModel(model);
 
+    renderer.setVignetteStrength(1.f);
+
     renderer.renderModelsToImage("build/img.ppm", 500, 500, RENDER_MODE_RAY_TRACING);
 }
