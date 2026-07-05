@@ -61,13 +61,22 @@ namespace CL
 
         void setVignetteStrength(float vignetteStrength) { this->vignetteStrength = vignetteStrength; }
 
+        void setSunDir(clm::vec3 sunToSurfaceDir) { surfaceToSunDir = sunToSurfaceDir.normalized(); surfaceToSunDir = surfaceToSunDir * -1; }
+
         void run();
+
     private:
         static constexpr float FOV = clm::PI / 3;
 
         std::vector<Model> models;
 
         clm::vec3 clearColor;
+
+        clm::vec3 cameraPos;
+
+        clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
+
+        float dt;
 
         float vignetteStrength = 0.f;
 

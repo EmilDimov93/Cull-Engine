@@ -52,7 +52,6 @@ namespace CL
     {
         std::vector<uint8_t> image(width * height * 3);
 
-        const clm::vec3 cameraPosition(0.f, 0.f, 0.f);
         const float tanHalfFov = std::tan(FOV * 0.5f);
         const float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
 
@@ -86,13 +85,22 @@ namespace CL
                                     model.transform * mesh.vertices[mesh.indices[indexOffset + 2]].pos};
 
                                 clm::vec3 intersectionPoint;
-                                if (RayIntersectsTriangle(cameraPosition, rayDirection, pts, intersectionPoint))
+                                if (RayIntersectsTriangle(cameraPos, rayDirection, pts, intersectionPoint))
                                 {
-                                    const float distance = (intersectionPoint - cameraPosition).length();
+                                    const float distance = (intersectionPoint - cameraPos).length();
                                     if (distance < closestDistance)
                                     {
                                         closestDistance = distance;
-                                        pixelColor = model.materials[mesh.materialIndex].color;
+
+                                        clm::vec3 edge1 = pts[1] - pts[0];
+                                        clm::vec3 edge2 = pts[2] - pts[0];
+                                        clm::vec3 worldNormal = edge1.cross(edge2).normalized();
+
+                                        float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir));
+
+                                        pixelColor.x = model.materials[mesh.materialIndex].color.x * shade;
+                                        pixelColor.y = model.materials[mesh.materialIndex].color.y * shade;
+                                        pixelColor.z = model.materials[mesh.materialIndex].color.z * shade;
                                     }
                                 }
                             }

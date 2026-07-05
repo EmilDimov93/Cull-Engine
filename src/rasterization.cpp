@@ -90,7 +90,7 @@ namespace CL
                         clm::vec3 edge2 = pointsWorld[2] - pointsWorld[0];
                         clm::vec3 worldNormal = edge1.cross(edge2).normalized();
 
-                        float shade = std::max(0.f, worldNormal.dot(clm::vec3(0.f, 1.f, 0.f)));
+                        float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir));
 
                         fillTriangle(image, windowWidth, windowHeight, points, depthBuffer, material, shade);
                         currPoint = 0;

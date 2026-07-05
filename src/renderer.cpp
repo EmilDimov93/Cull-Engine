@@ -4,7 +4,8 @@
 #include "renderer.hpp"
 
 #include <cstdlib>
-
+#include <chrono>
+#include <iostream>
 namespace CL
 {
     Renderer::Renderer(clm::vec3 clearColor) : clearColor(clearColor)
@@ -40,6 +41,8 @@ namespace CL
     {
         while (!glfwWindowShouldClose(window))
         {
+            auto startTime = std::chrono::steady_clock::now();
+
             glfwPollEvents();
 
             std::vector<uint8_t> image = getImageRasterized();
@@ -48,7 +51,7 @@ namespace CL
             glRasterPos2f(-1.0f, 1.0f);
             glDrawPixels(windowWidth, windowHeight, GL_RGB, GL_UNSIGNED_BYTE, image.data());
             glfwSwapBuffers(window);
-            
+
             if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             {
                 constexpr uint32_t imageSize = 100;
@@ -66,6 +69,9 @@ namespace CL
 
                 int exitCode = std::system("start build\\img.ppm");
             }
+
+            dt = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
+            std::cout << 1000.f / dt << std::endl;
         }
     }
 
