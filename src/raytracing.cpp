@@ -59,6 +59,10 @@ namespace CL
         std::vector<std::thread> workers;
         workers.reserve(threadCount);
 
+        const clm::vec3 forward = {cosf(cameraRot.x) * sinf(cameraRot.y), -sinf(cameraRot.x), cosf(cameraRot.x) * cosf(cameraRot.y)};
+        const clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
+        const clm::vec3 up = {sinf(cameraRot.x) * sinf(cameraRot.y), cosf(cameraRot.x), sinf(cameraRot.x) * cosf(cameraRot.y)};
+
         auto renderRows = [&](unsigned int threadIndex)
         {
             for (uint32_t pixelY = threadIndex; pixelY < height; pixelY += threadCount)
@@ -68,7 +72,7 @@ namespace CL
                     const float ndcX = (2.f * (pixelX + 0.5f) / width - 1.f) * aspectRatio * tanHalfFov;
                     const float ndcY = (1.f - 2.f * (pixelY + 0.5f) / height) * tanHalfFov;
 
-                    const clm::vec3 rayDirection = clm::vec3(ndcX, ndcY, 1.f).normalized();
+                    const clm::vec3 rayDirection = (right * ndcX + up * ndcY + forward).normalized();
 
                     clm::vec4 pixelColor = {clearColor.x, clearColor.y, clearColor.z, 1.f};
                     float closestDistance = std::numeric_limits<float>::max();

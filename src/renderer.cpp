@@ -45,6 +45,8 @@ namespace CL
 
             glfwPollEvents();
 
+            updateCamera();
+
             std::vector<uint8_t> image = getImageRasterized();
 
             glPixelZoom(1.0f, -1.0f);
@@ -78,5 +80,29 @@ namespace CL
     void Renderer::addModel(Model &model)
     {
         models.push_back(model);
+    }
+
+    void Renderer::updateCamera()
+    {
+        const float freeSpeed = 0.001f;
+
+        cameraRot.y += ((glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)) * clm::PI * dt * freeSpeed;
+        
+        cameraRot.x += ((glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)) * clm::PI * dt * freeSpeed;
+        cameraRot.x = std::clamp(cameraRot.x, -clm::PI / 2, clm::PI / 2);
+
+        float forwardBackward = ((glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)) * dt;
+        clm::vec3 forward = {cosf(cameraRot.x) * sinf(cameraRot.y), -sinf(cameraRot.x), cosf(cameraRot.x) * cosf(cameraRot.y)};
+        clm::vec3 forwardScaled = forward * forwardBackward;
+
+        float leftRight = ((glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)) * dt;
+        clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
+        clm::vec3 rightScaled = right * leftRight;
+
+        clm::vec3 delta = (forwardScaled + rightScaled) * freeSpeed;
+
+        cameraPos += delta;
+
+        viewMat = clm::rotationMat(-cameraRot.x, 0.f, 0.f) * clm::rotationMat(0.f, -cameraRot.y, 0.f) * clm::translationMat(-cameraPos.x, -cameraPos.y, -cameraPos.z);
     }
 }

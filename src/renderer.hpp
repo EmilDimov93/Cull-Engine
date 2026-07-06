@@ -73,6 +73,8 @@ namespace CL
         clm::vec3 clearColor;
 
         clm::vec3 cameraPos;
+        clm::vec3 cameraRot;
+        clm::mat4 viewMat;
 
         clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
 
@@ -85,5 +87,7 @@ namespace CL
 
         [[nodiscard]] const std::vector<uint8_t> getImageRasterized();
         [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(uint32_t width, uint32_t height);
+
+        void updateCamera();
     };
 }

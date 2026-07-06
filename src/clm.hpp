@@ -30,6 +30,18 @@ namespace clm
             return vec3(x - other.x, y - other.y, z - other.z);
         }
 
+        void operator+=(const vec3 &other)
+        {
+            x += other.x;
+            y += other.y;
+            z += other.z;
+        }
+
+        [[nodiscard]] vec3 operator*(float scalar) const
+        {
+            return vec3(x * scalar, y * scalar, z * scalar);
+        }
+
         [[nodiscard]] float dot(vec3 other) const
         {
             return x * other.x + y * other.y + z * other.z;

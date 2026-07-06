@@ -54,6 +54,8 @@ namespace CL
 
     const std::vector<uint8_t> Renderer::getImageRasterized()
     {
+        const float nearPlane = 0.001f;
+
         std::vector<uint8_t> image(windowWidth * windowHeight * 3);
         std::vector<float> depthBuffer(windowWidth * windowHeight, std::numeric_limits<float>::infinity());
 
@@ -74,15 +76,21 @@ namespace CL
                 std::array<clm::vec3, 3> pointsWorld;
                 for (uint32_t index : mesh.indices)
                 {
-                    pointsWorld[currPoint] = model.transform * mesh.vertices[index].pos;
+                    pointsWorld[currPoint] = viewMat * model.transform * mesh.vertices[index].pos;
                     const float tanHalfFov = std::tan(FOV * 0.5f);
-                    const float cameraDepth = pointsWorld[currPoint].z;
-                    const float ndcX = pointsWorld[currPoint].x / (cameraDepth * tanHalfFov);
-                    const float ndcY = pointsWorld[currPoint].y / (cameraDepth * tanHalfFov);
+
+                    if (pointsWorld[currPoint].z < nearPlane)
+                    {
+                        currPoint = 0;
+                        continue;
+                    }
+
+                    const float ndcX = pointsWorld[currPoint].x / (pointsWorld[currPoint].z * tanHalfFov);
+                    const float ndcY = pointsWorld[currPoint].y / (pointsWorld[currPoint].z * tanHalfFov);
 
                     points[currPoint] = {(ndcX * 0.5f + 0.5f) * windowWidth,
                                          (0.5f - ndcY * 0.5f) * windowHeight,
-                                         cameraDepth};
+                                         pointsWorld[currPoint].z};
 
                     if (currPoint == 2)
                     {
