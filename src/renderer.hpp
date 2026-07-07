@@ -45,9 +45,21 @@ namespace CL
         std::vector<Mesh> meshes;
         std::vector<Material> materials;
 
-        clm::mat4 transform;
+        struct Transform
+        {
+            clm::vec3 pos;
+            clm::vec3 rot;
+            clm::vec3 scale;
 
-        Model(const std::vector<Mesh> &meshes, const std::vector<Material> &materials, clm::mat4 transform = clm::mat4()) : meshes(meshes), materials(materials), transform(transform) {}
+            clm::mat4 mat() const
+            {
+                return clm::translationMat(pos.x, pos.y, pos.z) * clm::rotationMat(rot.x, rot.y, rot.z) * clm::scaleMat(scale.x, scale.y, scale.z);
+            };
+
+            Transform(clm::vec3 pos = {}, clm::vec3 rot = {}, clm::vec3 scale = {1.f, 1.f, 1.f}) : pos(pos), rot(rot), scale(scale) {}
+        } transform;
+
+        Model(const std::vector<Mesh> &meshes, const std::vector<Material> &materials, Transform transform = Transform()) : meshes(meshes), materials(materials), transform(transform) {}
     };
 
     class Renderer
@@ -61,7 +73,11 @@ namespace CL
 
         void setVignetteStrength(float vignetteStrength) { this->vignetteStrength = vignetteStrength; }
 
-        void setSunDir(clm::vec3 sunToSurfaceDir) { surfaceToSunDir = sunToSurfaceDir.normalized(); surfaceToSunDir = surfaceToSunDir * -1; }
+        void setSunDir(clm::vec3 sunToSurfaceDir)
+        {
+            surfaceToSunDir = sunToSurfaceDir.normalized();
+            surfaceToSunDir = surfaceToSunDir * -1;
+        }
 
         void run();
 

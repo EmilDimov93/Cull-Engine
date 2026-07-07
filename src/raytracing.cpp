@@ -83,10 +83,11 @@ namespace CL
                         {
                             for (size_t indexOffset = 0; indexOffset + 2 < mesh.indices.size(); indexOffset += 3)
                             {
+                                clm::mat4 modelMat = model.transform.mat();
                                 const std::array<clm::vec3, 3> pts = {
-                                    model.transform * mesh.vertices[mesh.indices[indexOffset + 0]].pos,
-                                    model.transform * mesh.vertices[mesh.indices[indexOffset + 1]].pos,
-                                    model.transform * mesh.vertices[mesh.indices[indexOffset + 2]].pos};
+                                    modelMat * mesh.vertices[mesh.indices[indexOffset + 0]].pos,
+                                    modelMat * mesh.vertices[mesh.indices[indexOffset + 1]].pos,
+                                    modelMat * mesh.vertices[mesh.indices[indexOffset + 2]].pos};
 
                                 clm::vec3 intersectionPoint;
                                 if (RayIntersectsTriangle(cameraPos, rayDirection, pts, intersectionPoint))

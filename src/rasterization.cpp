@@ -77,7 +77,7 @@ namespace CL
                 std::array<clm::vec3, 3> pointsView;
                 for (uint32_t index : mesh.indices)
                 {
-                    pointsWorld[currPoint] = model.transform * mesh.vertices[index].pos;
+                    pointsWorld[currPoint] = model.transform.mat() * mesh.vertices[index].pos;
                     pointsView[currPoint] = viewMat * pointsWorld[currPoint];
                     const float tanHalfFov = std::tan(FOV * 0.5f);
 
