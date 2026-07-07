@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <chrono>
 #include <iostream>
+
 namespace CL
 {
     Renderer::Renderer(clm::vec3 clearColor) : clearColor(clearColor)
@@ -52,6 +53,13 @@ namespace CL
             glDrawPixels(windowWidth, windowHeight, GL_RGB, GL_UNSIGNED_BYTE, image.data());
             glfwSwapBuffers(window);
 
+            if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+            {
+                double mouseX, mouseY;
+                glfwGetCursorPos(window, &mouseX, &mouseY);
+                selectedModelIndex = findHoveredModel(mouseX, mouseY);
+            }
+
             if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             {
                 constexpr uint32_t imageSize = 100;
@@ -71,7 +79,7 @@ namespace CL
             }
 
             dt = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
-            std::cout << 1000.f / dt << std::endl;
+            // std::cout << 1000.f / dt << std::endl;
         }
     }
 
@@ -85,7 +93,7 @@ namespace CL
         const float freeSpeed = 0.001f;
 
         cameraRot.y += ((glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)) * clm::PI * dt * freeSpeed;
-        
+
         cameraRot.x += ((glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)) * clm::PI * dt * freeSpeed;
         cameraRot.x = std::clamp(cameraRot.x, -clm::PI / 2, clm::PI / 2);
 

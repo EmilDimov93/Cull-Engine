@@ -94,6 +94,8 @@ namespace CL
 
         clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
 
+        uint32_t selectedModelIndex = std::numeric_limits<uint32_t>::infinity();
+
         float dt;
 
         float vignetteStrength = 0.f;
@@ -105,5 +107,7 @@ namespace CL
         [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(uint32_t width, uint32_t height);
 
         void updateCamera();
+
+        uint32_t findHoveredModel(uint32_t mouseX, uint32_t mouseY);
     };
 }
