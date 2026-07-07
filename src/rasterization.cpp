@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0
 
 #include "renderer.hpp"
-
+#include <iostream>
 namespace CL
 {
     void fillTriangle(std::vector<uint8_t> &image, uint32_t width, uint32_t height, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
@@ -74,23 +74,26 @@ namespace CL
                 uint32_t currPoint = 0;
                 std::array<clm::vec3, 3> points;
                 std::array<clm::vec3, 3> pointsWorld;
+                std::array<clm::vec3, 3> pointsView;
                 for (uint32_t index : mesh.indices)
                 {
-                    pointsWorld[currPoint] = viewMat * model.transform * mesh.vertices[index].pos;
+                    pointsWorld[currPoint] = model.transform * mesh.vertices[index].pos;
+                    pointsView[currPoint] = viewMat * pointsWorld[currPoint];
                     const float tanHalfFov = std::tan(FOV * 0.5f);
 
-                    if (pointsWorld[currPoint].z < nearPlane)
+                    if (pointsView[currPoint].z < nearPlane)
                     {
                         currPoint = 0;
                         continue;
                     }
 
-                    const float ndcX = pointsWorld[currPoint].x / (pointsWorld[currPoint].z * tanHalfFov);
-                    const float ndcY = pointsWorld[currPoint].y / (pointsWorld[currPoint].z * tanHalfFov);
+                    const float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
+                    const float ndcX = pointsView[currPoint].x / (pointsView[currPoint].z * tanHalfFov * aspectRatio);
+                    const float ndcY = pointsView[currPoint].y / (pointsView[currPoint].z * tanHalfFov);
 
-                    points[currPoint] = {(ndcX * 0.5f + 0.5f) * windowWidth,
-                                         (0.5f - ndcY * 0.5f) * windowHeight,
-                                         pointsWorld[currPoint].z};
+                    points[currPoint] = {clm::signedToUnitRange(ndcX) * windowWidth,
+                                         clm::signedToUnitRange(ndcY) * windowHeight,
+                                         pointsView[currPoint].z};
 
                     if (currPoint == 2)
                     {

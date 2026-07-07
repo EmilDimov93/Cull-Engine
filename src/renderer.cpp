@@ -49,8 +49,6 @@ namespace CL
 
             std::vector<uint8_t> image = getImageRasterized();
 
-            glPixelZoom(1.0f, -1.0f);
-            glRasterPos2f(-1.0f, 1.0f);
             glDrawPixels(windowWidth, windowHeight, GL_RGB, GL_UNSIGNED_BYTE, image.data());
             glfwSwapBuffers(window);
 

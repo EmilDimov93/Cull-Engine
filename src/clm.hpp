@@ -177,4 +177,14 @@ namespace clm
     {
         return scaleMat(uniformScale, uniformScale, uniformScale);
     }
+
+    inline float unitToSignedRange(float unitValue)
+    {
+        return unitValue * 2.f - 1.f;
+    }
+
+    inline float signedToUnitRange(float signedValue)
+    {
+        return (signedValue + 1.f) / 2.f;
+    }
 }

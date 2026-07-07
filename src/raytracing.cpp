@@ -69,8 +69,8 @@ namespace CL
             {
                 for (uint32_t pixelX = 0; pixelX < width; pixelX++)
                 {
-                    const float ndcX = (2.f * (pixelX + 0.5f) / width - 1.f) * aspectRatio * tanHalfFov;
-                    const float ndcY = (1.f - 2.f * (pixelY + 0.5f) / height) * tanHalfFov;
+                    const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / width) * aspectRatio * tanHalfFov;
+                    const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / height) * tanHalfFov;
 
                     const clm::vec3 rayDirection = (right * ndcX + up * ndcY + forward).normalized();
 
@@ -111,9 +111,9 @@ namespace CL
                         }
                     }
 
-                    const float smallestDot = clm::vec3((2.f * (0.f + 0.5f) / width - 1.f) * aspectRatio * tanHalfFov, (1.f - 2.f * (0.f + 0.5f) / height) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
-                    const float biggestDot = clm::vec3((2.f * (width / 2.f + 0.5f) / width - 1.f) * aspectRatio * tanHalfFov, (1.f - 2.f * (height / 2.f + 0.5f) / height) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
-                    const float vignette = (rayDirection.dot(clm::vec3(0.f, 0.f, 1.f)) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
+                    const float smallestDot = clm::vec3(clm::unitToSignedRange(0.5f / width) * aspectRatio * tanHalfFov, -clm::unitToSignedRange(0.5f / height) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
+                    const float biggestDot = clm::vec3(clm::unitToSignedRange((width  / 2.f + 0.5f) / width) * aspectRatio * tanHalfFov, -clm::unitToSignedRange((height / 2.f + 0.5f) / height) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
+                    const float vignette = (rayDirection.dot(forward) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
 
                     const size_t pixelIndex = (static_cast<size_t>(pixelY) * width + pixelX) * 3;
 
