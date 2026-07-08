@@ -114,8 +114,6 @@ namespace CL
 
     uint32_t Renderer::findHoveredModel(uint32_t mouseX, uint32_t mouseY)
     {
-        selectedModelIndex = std::numeric_limits<uint32_t>::max();
-
         const float tanHalfFov = std::tan(FOV * 0.5f);
         const float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
 
@@ -128,36 +126,10 @@ namespace CL
 
         const clm::vec3 rayDirection = (right * ndcX + up * ndcY + forward).normalized();
 
-        clm::vec4 pixelColor = {clearColor.x, clearColor.y, clearColor.z, 1.f};
-        float closestDistance = std::numeric_limits<float>::max();
+        uint32_t hitModelIndex = INVALID_INDEX;
 
-        for (uint32_t i = 0; i < models.size(); i++)
-        {
-            clm::mat4 modelMat = models[i].transform.mat();
-            for (const Mesh &mesh : models[i].meshes)
-            {
-                for (size_t indexOffset = 0; indexOffset + 2 < mesh.indices.size(); indexOffset += 3)
-                {
-                    const std::array<clm::vec3, 3> pts = {
-                        modelMat * mesh.vertices[mesh.indices[indexOffset + 0]].pos,
-                        modelMat * mesh.vertices[mesh.indices[indexOffset + 1]].pos,
-                        modelMat * mesh.vertices[mesh.indices[indexOffset + 2]].pos};
+        castRay(cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
 
-                    clm::vec3 intersectionPoint;
-                    if (RayIntersectsTriangle(cameraPos, rayDirection, pts, intersectionPoint))
-                    {
-                        const float distance = (intersectionPoint - cameraPos).length();
-                        if (distance < closestDistance)
-                        {
-                            closestDistance = distance;
-
-                            selectedModelIndex = i;
-                        }
-                    }
-                }
-            }
-        }
-
-        return selectedModelIndex;
+        return hitModelIndex;
     }
 }

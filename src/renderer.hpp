@@ -82,6 +82,8 @@ namespace CL
         void run();
 
     private:
+        static constexpr uint32_t INVALID_INDEX = std::numeric_limits<uint32_t>::max();
+
         static constexpr float FOV = clm::PI / 3;
 
         Material SELECTED_MODEL_MATERIAL = Material(clm::vec4(255.f, 255.f, 0.f, 255.f));
@@ -96,7 +98,7 @@ namespace CL
 
         clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
 
-        uint32_t selectedModelIndex = std::numeric_limits<uint32_t>::max();
+        uint32_t selectedModelIndex = INVALID_INDEX;
 
         float dt;
 
@@ -111,6 +113,7 @@ namespace CL
         void updateCamera();
 
         uint32_t findHoveredModel(uint32_t mouseX, uint32_t mouseY);
-        [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint);
+
+        void castRay(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
     };
 }

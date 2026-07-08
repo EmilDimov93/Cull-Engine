@@ -70,6 +70,11 @@ namespace clm
     {
         float x, y, z, w;
 
+        [[nodiscard]] vec4 operator*(float scalar) const
+        {
+            return vec4(x * scalar, y * scalar, z * scalar, w * scalar);
+        }
+
         vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) : x(x), y(y), z(z), w(w) {}
     };
 
