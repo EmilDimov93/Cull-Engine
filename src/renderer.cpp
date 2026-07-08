@@ -62,6 +62,12 @@ namespace CL
                 selectedModelIndex = findHoveredModel(mouseX, mouseY);
             }
 
+            if((glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_PRESS) && (selectedModelIndex != INVALID_INDEX))
+            {
+                models.erase(models.begin() + selectedModelIndex);
+                selectedModelIndex = INVALID_INDEX;
+            }
+
             if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             {
                 constexpr uint32_t imageSize = 100;

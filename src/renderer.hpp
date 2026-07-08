@@ -11,6 +11,7 @@ Move camera: W, A, S, D
 Rotate camera: Arrow keys
 Render image to .ppm: R
 Select model: left mouse button
+Delete model: select it then press Delete
 
 */
 
