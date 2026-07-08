@@ -41,6 +41,13 @@ namespace CL
         clm::vec4 color;
 
         Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}) : color(color) {}
+
+        Material tinted(clm::vec4 tint, float tintFactor) const
+        {
+            tint = tint * tintFactor;
+            clm::vec4 baseColor = color * (1.f - tintFactor);
+            return Material(baseColor + tint);
+        }
     };
 
     struct Mesh
@@ -100,7 +107,7 @@ namespace CL
 
         static constexpr float FOV = clm::PI / 3;
 
-        Material SELECTED_MODEL_MATERIAL = Material(clm::vec4(255.f, 255.f, 0.f, 255.f));
+        clm::vec4 SELECTED_MODEL_COLOR = clm::vec4(255.f, 255.f, 0.f, 255.f);
 
         std::vector<Model> models;
 

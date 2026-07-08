@@ -104,7 +104,7 @@ namespace CL
 
                         float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir));
 
-                        fillTriangle(image, windowWidth, windowHeight, points, depthBuffer, (modelIndex == selectedModelIndex ? SELECTED_MODEL_MATERIAL : material), shade);
+                        fillTriangle(image, windowWidth, windowHeight, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
                         currPoint = 0;
                     }
                     else
