@@ -27,6 +27,8 @@ namespace CL
             Renderer *r = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
             r->windowWidth = static_cast<uint32_t>(width);
             r->windowHeight = static_cast<uint32_t>(height); });
+
+        arrow = loadOBJ("build/arrow.obj");
     }
 
     Renderer::~Renderer()

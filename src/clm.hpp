@@ -141,6 +141,11 @@ namespace clm
         return m;
     }
 
+    [[nodiscard]] inline mat4 translationMat(vec3 translation)
+    {
+        return translationMat(translation.x, translation.y, translation.z);
+    }
+
     [[nodiscard]] inline mat4 rotationMat(float x, float y, float z)
     {
         mat4 m;

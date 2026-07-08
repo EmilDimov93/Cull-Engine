@@ -1,6 +1,19 @@
 // Copyright 2025 Emil Dimov
 // Licensed under the Apache License, Version 2.0
 
+/*
+
+Two pipelines
+1. Runs live in window, uses rasterization
+2. Produces result in .ppm format, uses ray-tracing
+
+Move camera: W, A, S, D
+Rotate camera: Arrow keys
+Render image to .ppm: R
+Select model: left mouse button
+
+*/
+
 #pragma once
 
 #include "clm.hpp"
@@ -60,6 +73,7 @@ namespace CL
         } transform;
 
         Model(const std::vector<Mesh> &meshes, const std::vector<Material> &materials, Transform transform = Transform()) : meshes(meshes), materials(materials), transform(transform) {}
+        Model() {}
     };
 
     class Renderer
@@ -89,6 +103,11 @@ namespace CL
         Material SELECTED_MODEL_MATERIAL = Material(clm::vec4(255.f, 255.f, 0.f, 255.f));
 
         std::vector<Model> models;
+
+        Model arrow;
+        Material arrowXMaterial = Material({255.f, 0.f, 0.f, 255.f});
+        Material arrowYMaterial = Material({0.f, 255.f, 0.f, 255.f});
+        Material arrowZMaterial = Material({0.f, 0.f, 255.f, 255.f});
 
         clm::vec3 clearColor;
 

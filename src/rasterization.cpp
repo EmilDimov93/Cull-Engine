@@ -115,6 +115,59 @@ namespace CL
             }
         }
 
+        if (selectedModelIndex != INVALID_INDEX)
+        {
+            const clm::mat4 arrowXModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.2f, 0.4f, 0.2f}).mat();
+            const clm::mat4 arrowYModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
+            const clm::mat4 arrowZModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
+
+            std::vector<float> arrowDepthBuffer(windowWidth * windowHeight, std::numeric_limits<float>::infinity());
+            auto drawArrow = [&](clm::mat4 modelMat, Material material)
+            {
+                for (const Mesh &mesh : arrow.meshes)
+                {
+                    uint32_t currPoint = 0;
+                    std::array<clm::vec3, 3> points;
+                    std::array<clm::vec3, 3> pointsWorld;
+                    std::array<clm::vec3, 3> pointsView;
+                    for (uint32_t index : mesh.indices)
+                    {
+                        pointsWorld[currPoint] = modelMat * mesh.vertices[index].pos;
+                        pointsView[currPoint] = viewMat * pointsWorld[currPoint];
+                        const float tanHalfFov = std::tan(FOV * 0.5f);
+
+                        if (pointsView[currPoint].z < nearPlane)
+                        {
+                            currPoint = 0;
+                            continue;
+                        }
+
+                        const float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
+                        const float ndcX = pointsView[currPoint].x / (pointsView[currPoint].z * tanHalfFov * aspectRatio);
+                        const float ndcY = pointsView[currPoint].y / (pointsView[currPoint].z * tanHalfFov);
+
+                        points[currPoint] = {clm::signedToUnitRange(ndcX) * windowWidth,
+                                             clm::signedToUnitRange(ndcY) * windowHeight,
+                                             pointsView[currPoint].z};
+
+                        if (currPoint == 2)
+                        {
+                            fillTriangle(image, windowWidth, windowHeight, points, arrowDepthBuffer, material, 1.f);
+                            currPoint = 0;
+                        }
+                        else
+                        {
+                            currPoint++;
+                        }
+                    }
+                }
+            };
+
+            drawArrow(arrowXModelMat, arrowXMaterial);
+            drawArrow(arrowYModelMat, arrowYMaterial);
+            drawArrow(arrowZModelMat, arrowZMaterial);
+        }
+
         return image;
     }
 }
