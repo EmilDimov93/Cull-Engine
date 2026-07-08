@@ -13,7 +13,11 @@ int main()
     model.transform.pos = {0.f, -1.f, 8.f};
     model.transform.rot = {0.f, 3.4f, 0.f};
 
+    Model m2 = model;
+    m2.transform.pos.x = 5.f;
+
     renderer.addModel(model);
+    renderer.addModel(m2);
 
     renderer.setVignetteStrength(1.f);
 

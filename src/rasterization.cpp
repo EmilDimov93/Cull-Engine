@@ -66,18 +66,19 @@ namespace CL
             image[i + 2] = clearColor.z;
         }
 
-        for (const Model &model : models)
+        for (uint32_t modelIndex = 0; modelIndex < models.size(); modelIndex++)
         {
-            for (const Mesh &mesh : model.meshes)
+            clm::mat4 modelMat = models[modelIndex].transform.mat();
+            for (const Mesh &mesh : models[modelIndex].meshes)
             {
-                const Material &material = model.materials[mesh.materialIndex];
+                const Material &material = models[modelIndex].materials[mesh.materialIndex];
                 uint32_t currPoint = 0;
                 std::array<clm::vec3, 3> points;
                 std::array<clm::vec3, 3> pointsWorld;
                 std::array<clm::vec3, 3> pointsView;
                 for (uint32_t index : mesh.indices)
                 {
-                    pointsWorld[currPoint] = model.transform.mat() * mesh.vertices[index].pos;
+                    pointsWorld[currPoint] = modelMat * mesh.vertices[index].pos;
                     pointsView[currPoint] = viewMat * pointsWorld[currPoint];
                     const float tanHalfFov = std::tan(FOV * 0.5f);
 
@@ -103,7 +104,7 @@ namespace CL
 
                         float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir));
 
-                        fillTriangle(image, windowWidth, windowHeight, points, depthBuffer, material, shade);
+                        fillTriangle(image, windowWidth, windowHeight, points, depthBuffer, (modelIndex == selectedModelIndex ? SELECTED_MODEL_MATERIAL : material), shade);
                         currPoint = 0;
                     }
                     else

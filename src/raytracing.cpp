@@ -7,7 +7,7 @@
 
 namespace CL
 {
-    [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
+    bool Renderer::RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
     {
         constexpr float EPSILON = 0.0000001f;
 
@@ -79,11 +79,11 @@ namespace CL
 
                     for (const Model &model : models)
                     {
+                        clm::mat4 modelMat = model.transform.mat();
                         for (const Mesh &mesh : model.meshes)
                         {
                             for (size_t indexOffset = 0; indexOffset + 2 < mesh.indices.size(); indexOffset += 3)
                             {
-                                clm::mat4 modelMat = model.transform.mat();
                                 const std::array<clm::vec3, 3> pts = {
                                     modelMat * mesh.vertices[mesh.indices[indexOffset + 0]].pos,
                                     modelMat * mesh.vertices[mesh.indices[indexOffset + 1]].pos,

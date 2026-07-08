@@ -27,7 +27,7 @@ namespace CL
     {
         clm::vec4 color;
 
-        Material(clm::vec4 color = {1.f, 1.f, 1.f, 1.f}) : color(color) {}
+        Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}) : color(color) {}
     };
 
     struct Mesh
@@ -84,6 +84,8 @@ namespace CL
     private:
         static constexpr float FOV = clm::PI / 3;
 
+        Material SELECTED_MODEL_MATERIAL = Material(clm::vec4(255.f, 255.f, 0.f, 255.f));
+
         std::vector<Model> models;
 
         clm::vec3 clearColor;
@@ -94,7 +96,7 @@ namespace CL
 
         clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
 
-        uint32_t selectedModelIndex = std::numeric_limits<uint32_t>::infinity();
+        uint32_t selectedModelIndex = std::numeric_limits<uint32_t>::max();
 
         float dt;
 
@@ -109,5 +111,6 @@ namespace CL
         void updateCamera();
 
         uint32_t findHoveredModel(uint32_t mouseX, uint32_t mouseY);
+        [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint);
     };
 }
