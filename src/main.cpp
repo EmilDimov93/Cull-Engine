@@ -7,7 +7,7 @@ using namespace CL;
 
 int main()
 {
-    Renderer renderer({0.f, 102.f, 0.f});
+    Renderer renderer({1000.f, 1000.f}, {0.f, 102.f, 0.f});
 
     Model car1 = renderer.loadOBJ("build/car/car.obj");
     car1.transform.pos = {0.f, -1.f, 8.f};

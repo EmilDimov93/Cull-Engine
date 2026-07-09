@@ -58,7 +58,7 @@ namespace CL
             for (uint32_t j = 0; j < models[i].meshes.size(); j++)
             {
                 const Mesh &mesh = models[i].meshes[j];
-                for (size_t indexOffset = 0; indexOffset + 2 < mesh.indices.size(); indexOffset += 3)
+                for (uint32_t indexOffset = 0; indexOffset + 2 < mesh.indices.size(); indexOffset += 3)
                 {
                     const std::array<clm::vec3, 3> pts = {
                         modelMat * mesh.vertices[mesh.indices[indexOffset + 0]].pos,
@@ -94,12 +94,9 @@ namespace CL
         }
     }
 
-    const std::vector<uint8_t> Renderer::getImageRayTraced(uint32_t width, uint32_t height)
+    const std::vector<uint8_t> Renderer::getImageRayTraced(clm::vec2 imageSize)
     {
-        std::vector<uint8_t> image(width * height * 3);
-
-        const float tanHalfFov = std::tan(FOV * 0.5f);
-        const float aspectRatio = static_cast<float>(width) / static_cast<float>(height);
+        std::vector<uint8_t> image(static_cast<uint32_t>(imageSize.x) * static_cast<uint32_t>(imageSize.y) * 3);
 
         const unsigned int threadCount = std::max(1u, std::thread::hardware_concurrency());
         std::vector<std::thread> workers;
@@ -111,22 +108,22 @@ namespace CL
 
         auto renderRows = [&](unsigned int threadIndex)
         {
-            for (uint32_t pixelY = threadIndex; pixelY < height; pixelY += threadCount)
+            for (uint32_t pixelY = threadIndex; pixelY < imageSize.y; pixelY += threadCount)
             {
-                for (uint32_t pixelX = 0; pixelX < width; pixelX++)
+                for (uint32_t pixelX = 0; pixelX < imageSize.x; pixelX++)
                 {
-                    const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / width) * aspectRatio * tanHalfFov;
-                    const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / height) * tanHalfFov;
+                    const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / imageSize.x) * aspectRatio * TAN_HALF_FOV;
+                    const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / imageSize.y) * TAN_HALF_FOV;
 
                     const clm::vec3 rayDirection = (right * ndcX + up * ndcY + forward).normalized();
 
                     clm::vec4 pixelColor = {clearColor.x, clearColor.y, clearColor.z, 1.f};
 
-                    const float smallestDot = clm::vec3(clm::unitToSignedRange(0.5f / width) * aspectRatio * tanHalfFov, -clm::unitToSignedRange(0.5f / height) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
-                    const float biggestDot = clm::vec3(clm::unitToSignedRange((width / 2.f + 0.5f) / width) * aspectRatio * tanHalfFov, -clm::unitToSignedRange((height / 2.f + 0.5f) / height) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
+                    const float smallestDot = clm::vec3(clm::unitToSignedRange(0.5f / imageSize.x) * aspectRatio * TAN_HALF_FOV, -clm::unitToSignedRange(0.5f / imageSize.y) * TAN_HALF_FOV, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
+                    const float biggestDot = clm::vec3(clm::unitToSignedRange((imageSize.x / 2.f + 0.5f) / imageSize.x) * aspectRatio * TAN_HALF_FOV, -clm::unitToSignedRange((imageSize.y / 2.f + 0.5f) / imageSize.y) * TAN_HALF_FOV, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
                     const float vignette = (rayDirection.dot(forward) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
 
-                    const size_t pixelIndex = (static_cast<size_t>(pixelY) * width + pixelX) * 3;
+                    const uint32_t pixelIndex = (static_cast<uint32_t>(pixelY) * imageSize.x + pixelX) * 3;
 
                     uint32_t hitModelIndex = INVALID_INDEX;
                     uint32_t hitMeshIndex = INVALID_INDEX;

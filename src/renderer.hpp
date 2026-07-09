@@ -87,7 +87,7 @@ namespace CL
     class Renderer
     {
     public:
-        Renderer(clm::vec3 clearColor = {0.f, 0.f, 0.f});
+        Renderer(clm::vec2 windowSize = {500.f, 500.f}, clm::vec3 clearColor = {0.f, 0.f, 0.f});
         ~Renderer();
 
         void addModel(Model &model);
@@ -107,6 +107,7 @@ namespace CL
         static constexpr uint32_t INVALID_INDEX = std::numeric_limits<uint32_t>::max();
 
         static constexpr float FOV = clm::PI / 3;
+        const float TAN_HALF_FOV = std::tan(FOV / 2.f);
 
         static constexpr clm::vec4 SELECTED_MODEL_COLOR = clm::vec4(255.f, 255.f, 0.f, 255.f);
 
@@ -124,7 +125,7 @@ namespace CL
 
         std::vector<Model> models;
 
-        double prevMouseX, prevMouseY;
+        clm::vec2 prevMousePos;
 
         clm::vec3 clearColor;
 
@@ -141,10 +142,11 @@ namespace CL
         float vignetteStrength = 0.f;
 
         GLFWwindow *window;
-        uint32_t windowWidth = 1000, windowHeight = 1000;
+        clm::vec2 windowSize;
+        float aspectRatio;
 
         [[nodiscard]] const std::vector<uint8_t> getImageRasterized();
-        [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(uint32_t width, uint32_t height);
+        [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(clm::vec2 imageSize);
 
         void updateCamera();
 

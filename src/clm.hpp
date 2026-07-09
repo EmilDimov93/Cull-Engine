@@ -9,6 +9,13 @@ namespace clm
 {
     static constexpr float PI = 3.14159265f;
 
+    struct vec2
+    {
+        float x, y;
+
+        constexpr vec2(float x = 0.f, float y = 0.f) : x(x), y(y) {}
+    };
+
     struct vec3
     {
         float x, y, z;

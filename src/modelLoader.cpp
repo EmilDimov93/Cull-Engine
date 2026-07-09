@@ -12,6 +12,10 @@ namespace CL
 {
     Model Renderer::loadOBJ(const std::string &filePath)
     {
+        std::string ext = std::filesystem::path(filePath).extension().string();
+        if(ext != ".obj")
+            exit(1);
+
         std::ifstream file(filePath);
         if (!file.is_open())
             exit(1);

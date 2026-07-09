@@ -5,12 +5,12 @@
 
 namespace CL
 {
-    void fillTriangle(std::vector<uint8_t> &image, uint32_t width, uint32_t height, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
+    void fillTriangle(std::vector<uint8_t> &image, clm::vec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
     {
         const int32_t minX = std::max(0.f, std::min({pts[0].x, pts[1].x, pts[2].x}));
-        const int32_t maxX = std::min(static_cast<float>(width - 1), std::max({pts[0].x, pts[1].x, pts[2].x}));
+        const int32_t maxX = std::min(imageSize.x - 1.f, std::max({pts[0].x, pts[1].x, pts[2].x}));
         const int32_t minY = std::max(0.f, std::min({pts[0].y, pts[1].y, pts[2].y}));
-        const int32_t maxY = std::min(static_cast<float>(height - 1), std::max({pts[0].y, pts[1].y, pts[2].y}));
+        const int32_t maxY = std::min(imageSize.y - 1.f, std::max({pts[0].y, pts[1].y, pts[2].y}));
 
         auto edgeFunction = [](int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t px, int32_t py) -> int64_t
         {
@@ -39,7 +39,7 @@ namespace CL
                     const float b2 = static_cast<float>(w2) / area;
                     const float depth = b0 * pts[0].z + b1 * pts[1].z + b2 * pts[2].z;
 
-                    const uint32_t pixelIndex = width * y + x;
+                    const uint32_t pixelIndex = static_cast<uint32_t>(imageSize.x) * y + x;
                     if (depth < depthBuffer[pixelIndex])
                     {
                         depthBuffer[pixelIndex] = depth;
@@ -56,14 +56,14 @@ namespace CL
     {
         const float nearPlane = 0.001f;
 
-        std::vector<uint8_t> image(windowWidth * windowHeight * 3);
-        std::vector<float> depthBuffer(windowWidth * windowHeight, std::numeric_limits<float>::infinity());
+        std::vector<uint8_t> image(static_cast<uint32_t>(windowSize.x) * static_cast<uint32_t>(windowSize.y) * 3);
+        std::vector<float> depthBuffer(static_cast<uint32_t>(windowSize.x) * static_cast<uint32_t>(windowSize.y), std::numeric_limits<float>::infinity());
 
-        for (uint32_t i = 0; i < windowWidth * windowHeight * 3; i += 3)
+        for (uint32_t i = 0; i < static_cast<uint32_t>(windowSize.x) * static_cast<uint32_t>(windowSize.y) * 3; i += 3)
         {
-            image[i] = clearColor.x;
-            image[i + 1] = clearColor.y;
-            image[i + 2] = clearColor.z;
+            image[i] = static_cast<uint8_t>(clearColor.x);
+            image[i + 1] = static_cast<uint8_t>(clearColor.y);
+            image[i + 2] = static_cast<uint8_t>(clearColor.z);
         }
 
         for (uint32_t modelIndex = 0; modelIndex < models.size(); modelIndex++)
@@ -80,7 +80,6 @@ namespace CL
                 {
                     pointsWorld[currPoint] = modelMat * mesh.vertices[index].pos;
                     pointsView[currPoint] = viewMat * pointsWorld[currPoint];
-                    const float tanHalfFov = std::tan(FOV * 0.5f);
 
                     if (pointsView[currPoint].z < nearPlane)
                     {
@@ -88,12 +87,11 @@ namespace CL
                         continue;
                     }
 
-                    const float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
-                    const float ndcX = pointsView[currPoint].x / (pointsView[currPoint].z * tanHalfFov * aspectRatio);
-                    const float ndcY = pointsView[currPoint].y / (pointsView[currPoint].z * tanHalfFov);
+                    const float ndcX = pointsView[currPoint].x / (pointsView[currPoint].z * TAN_HALF_FOV * aspectRatio);
+                    const float ndcY = pointsView[currPoint].y / (pointsView[currPoint].z * TAN_HALF_FOV);
 
-                    points[currPoint] = {clm::signedToUnitRange(ndcX) * windowWidth,
-                                         clm::signedToUnitRange(ndcY) * windowHeight,
+                    points[currPoint] = {clm::signedToUnitRange(ndcX) * windowSize.x,
+                                         clm::signedToUnitRange(ndcY) * windowSize.y,
                                          pointsView[currPoint].z};
 
                     if (currPoint == 2)
@@ -104,7 +102,7 @@ namespace CL
 
                         const float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir));
 
-                        fillTriangle(image, windowWidth, windowHeight, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
+                        fillTriangle(image, windowSize, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
                         currPoint = 0;
                     }
                     else
@@ -121,7 +119,7 @@ namespace CL
             const clm::mat4 gizmoArrowYModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
             const clm::mat4 gizmoArrowZModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
 
-            std::vector<float> arrowDepthBuffer(windowWidth * windowHeight, std::numeric_limits<float>::infinity());
+            std::vector<float> arrowDepthBuffer(static_cast<uint32_t>(windowSize.x) * static_cast<uint32_t>(windowSize.y), std::numeric_limits<float>::infinity());
             auto drawArrow = [&](clm::mat4 modelMat, Material material)
             {
                 for (const Mesh &mesh : gizmoArrow.meshes)
@@ -134,7 +132,6 @@ namespace CL
                     {
                         pointsWorld[currPoint] = modelMat * mesh.vertices[index].pos;
                         pointsView[currPoint] = viewMat * pointsWorld[currPoint];
-                        const float tanHalfFov = std::tan(FOV * 0.5f);
 
                         if (pointsView[currPoint].z < nearPlane)
                         {
@@ -142,17 +139,16 @@ namespace CL
                             continue;
                         }
 
-                        const float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
-                        const float ndcX = pointsView[currPoint].x / (pointsView[currPoint].z * tanHalfFov * aspectRatio);
-                        const float ndcY = pointsView[currPoint].y / (pointsView[currPoint].z * tanHalfFov);
+                        const float ndcX = pointsView[currPoint].x / (pointsView[currPoint].z * TAN_HALF_FOV * aspectRatio);
+                        const float ndcY = pointsView[currPoint].y / (pointsView[currPoint].z * TAN_HALF_FOV);
 
-                        points[currPoint] = {clm::signedToUnitRange(ndcX) * windowWidth,
-                                             clm::signedToUnitRange(ndcY) * windowHeight,
+                        points[currPoint] = {clm::signedToUnitRange(ndcX) * windowSize.x,
+                                             clm::signedToUnitRange(ndcY) * windowSize.y,
                                              pointsView[currPoint].z};
 
                         if (currPoint == 2)
                         {
-                            fillTriangle(image, windowWidth, windowHeight, points, arrowDepthBuffer, material, 1.f);
+                            fillTriangle(image, windowSize, points, arrowDepthBuffer, material, 1.f);
                             currPoint = 0;
                         }
                         else

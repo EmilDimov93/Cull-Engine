@@ -9,12 +9,15 @@
 
 namespace CL
 {
-    Renderer::Renderer(clm::vec3 clearColor) : clearColor(clearColor)
+    Renderer::Renderer(clm::vec2 windowSize, clm::vec3 clearColor) : clearColor(clearColor)
     {
+        this->windowSize = windowSize;
+        aspectRatio = windowSize.x / windowSize.y;
+
         if (!glfwInit())
             exit(1);
 
-        window = glfwCreateWindow(windowWidth, windowHeight, "Ray-Tracer", nullptr, nullptr);
+        window = glfwCreateWindow(static_cast<int>(windowSize.x), static_cast<int>(windowSize.y), "Ray-Tracer", nullptr, nullptr);
         if (!window)
             exit(1);
 
@@ -25,8 +28,8 @@ namespace CL
         glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int width, int height)
                                        {
             Renderer *r = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
-            r->windowWidth = static_cast<uint32_t>(width);
-            r->windowHeight = static_cast<uint32_t>(height); });
+            r->windowSize = {static_cast<float>(width), static_cast<float>(height)};
+            r->aspectRatio = r->windowSize.x / r->windowSize.y; });
 
         gizmoArrow = loadOBJ("assets/gizmo_arrow.obj");
     }
@@ -52,7 +55,7 @@ namespace CL
 
             std::vector<uint8_t> image = getImageRasterized();
 
-            glDrawPixels(windowWidth, windowHeight, GL_RGB, GL_UNSIGNED_BYTE, image.data());
+            glDrawPixels(static_cast<GLsizei>(windowSize.x), static_cast<GLsizei>(windowSize.y), GL_RGB, GL_UNSIGNED_BYTE, image.data());
             glfwSwapBuffers(window);
 
             double mouseX, mouseY;
@@ -66,13 +69,13 @@ namespace CL
                     selectedModelIndex = findHoveredModel(mouseX, mouseY);
                     break;
                 case GIZMO_MODE_X_ARROW:
-                    models[selectedModelIndex].transform.pos.x += static_cast<float>((mouseX - prevMouseX) / static_cast<double>(windowWidth));
+                    models[selectedModelIndex].transform.pos.x += (static_cast<float>(mouseX) - prevMousePos.x) / windowSize.x;
                     break;
                 case GIZMO_MODE_Y_ARROW:
-                    models[selectedModelIndex].transform.pos.y += static_cast<float>(-(mouseY - prevMouseY) / static_cast<double>(windowHeight));
+                    models[selectedModelIndex].transform.pos.y += (-static_cast<float>(mouseY) - prevMousePos.y) / windowSize.y;
                     break;
                 case GIZMO_MODE_Z_ARROW:
-                    models[selectedModelIndex].transform.pos.z += static_cast<float>((mouseX - prevMouseX) / static_cast<double>(windowWidth));
+                    models[selectedModelIndex].transform.pos.z += (static_cast<float>(mouseX) - prevMousePos.x) / windowSize.x;
                     break;
                 }
             }
@@ -81,8 +84,7 @@ namespace CL
                 gizmoMode = GIZMO_MODE_NONE;
             }
 
-            prevMouseX = mouseX;
-            prevMouseY = mouseY;
+            prevMousePos = {static_cast<float>(mouseX), static_cast<float>(mouseY)};
 
             if ((glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_PRESS) && (selectedModelIndex != INVALID_INDEX))
             {
@@ -94,7 +96,7 @@ namespace CL
             {
                 constexpr uint32_t imageSize = 100;
 
-                std::vector<uint8_t> image = getImageRayTraced(imageSize, imageSize);
+                std::vector<uint8_t> image = getImageRayTraced(imageSize);
 
                 std::ofstream file("build/img.ppm", std::ios::binary);
 
@@ -144,11 +146,8 @@ namespace CL
 
     uint32_t Renderer::findHoveredModel(uint32_t mouseX, uint32_t mouseY)
     {
-        const float tanHalfFov = std::tan(FOV * 0.5f);
-        const float aspectRatio = static_cast<float>(windowWidth) / static_cast<float>(windowHeight);
-
-        const float ndcX = clm::unitToSignedRange((mouseX + 0.5f) / windowWidth) * aspectRatio * tanHalfFov;
-        const float ndcY = -clm::unitToSignedRange((mouseY + 0.5f) / windowHeight) * tanHalfFov;
+        const float ndcX = clm::unitToSignedRange((mouseX + 0.5f) / windowSize.x) * aspectRatio * TAN_HALF_FOV;
+        const float ndcY = -clm::unitToSignedRange((mouseY + 0.5f) / windowSize.y) * TAN_HALF_FOV;
 
         const clm::vec3 forward = {cosf(cameraRot.x) * sinf(cameraRot.y), -sinf(cameraRot.x), cosf(cameraRot.x) * cosf(cameraRot.y)};
         const clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
