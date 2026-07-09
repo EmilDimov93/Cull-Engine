@@ -14,7 +14,8 @@ int main()
     car1.transform.rot = {0.f, 3.4f, 0.f};
 
     Model car2 = car1;
-    car2.transform.pos.x = 5.f;
+    // car2.transform.pos.x = 5.f;
+    car2.transform.pos = {0.f, 2.f, 8.f};
 
     renderer.addModel(car1);
     renderer.addModel(car2);

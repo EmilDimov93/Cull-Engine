@@ -88,6 +88,11 @@ namespace clm
         {
             return vec4(x * scalar, y * scalar, z * scalar, w * scalar);
         }
+
+        [[nodiscard]] constexpr vec4 operator/(float scalar) const
+        {
+            return vec4(x / scalar, y / scalar, z / scalar, w / scalar);
+        }
     };
 
     struct mat4

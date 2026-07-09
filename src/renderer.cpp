@@ -94,16 +94,17 @@ namespace CL
 
             if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             {
-                constexpr uint32_t imageSize = 100;
+                constexpr uint32_t imageWidth = 100;
+                constexpr uint32_t imageHeight = 100;
 
-                std::vector<uint8_t> image = getImageRayTraced(imageSize);
+                std::vector<uint8_t> image = getImageRayTraced(clm::vec2(imageWidth, imageHeight));
 
                 std::ofstream file("build/img.ppm", std::ios::binary);
 
                 file << "P6\n"
-                     << imageSize << ' ' << imageSize << "\n255\n";
+                     << imageWidth << ' ' << imageHeight << "\n255\n";
 
-                file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(imageSize) * imageSize * 3);
+                file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(imageWidth) * imageHeight * 3);
 
                 file.close();
 

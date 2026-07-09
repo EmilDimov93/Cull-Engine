@@ -152,6 +152,6 @@ namespace CL
 
         uint32_t findHoveredModel(uint32_t mouseX, uint32_t mouseY);
 
-        static void castRay(const std::vector<Model> models, const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
+        static void castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
     };
 }

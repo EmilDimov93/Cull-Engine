@@ -9,7 +9,8 @@ namespace CL
 {
     [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
     {
-        constexpr float EPSILON = 0.0000001f;
+        constexpr float EPSILON = 1e-7f;
+        constexpr float RAY_MIN_DISTANCE = 1e-3f;
 
         const clm::vec3 edge01 = pts[1] - pts[0];
         const clm::vec3 edge02 = pts[2] - pts[0];
@@ -37,7 +38,7 @@ namespace CL
 
         const float rayDistance = inverseDeterminant * edge02.dot(originCrossEdge01);
 
-        if (rayDistance > EPSILON)
+        if (rayDistance > RAY_MIN_DISTANCE)
         {
             outIntersectionPoint = rayOrigin + (rayVector.normalized() * (rayDistance * rayVector.length()));
             return true;
@@ -48,7 +49,7 @@ namespace CL
         }
     }
 
-    void Renderer::castRay(const std::vector<Model> models, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint)
+    void Renderer::castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint)
     {
         float closestDistance = std::numeric_limits<float>::max();
 
@@ -112,6 +113,7 @@ namespace CL
             {
                 for (uint32_t pixelX = 0; pixelX < imageSize.x; pixelX++)
                 {
+                    const float aspectRatio = imageSize.x / imageSize.y;
                     const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / imageSize.x) * aspectRatio * TAN_HALF_FOV;
                     const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / imageSize.y) * TAN_HALF_FOV;
 
@@ -128,15 +130,23 @@ namespace CL
                     uint32_t hitModelIndex = INVALID_INDEX;
                     uint32_t hitMeshIndex = INVALID_INDEX;
                     clm::vec3 normal;
-                    castRay(models, cameraPos, rayDirection, &hitModelIndex, &hitMeshIndex, &normal, nullptr);
+                    clm::vec3 intersectionPoint;
+                    castRay(models, cameraPos, rayDirection, &hitModelIndex, &hitMeshIndex, &normal, &intersectionPoint);
 
                     if (hitMeshIndex != INVALID_INDEX)
                     {
-                        float shade = std::max(0.f, normal.dot(surfaceToSunDir));
-
                         Material &material = models[hitModelIndex].materials[models[hitModelIndex].meshes[hitMeshIndex].materialIndex];
 
-                        pixelColor = material.color * shade;
+                        uint32_t shadowHitModelIndex = INVALID_INDEX;
+                        castRay(models, intersectionPoint, surfaceToSunDir, &shadowHitModelIndex, nullptr, nullptr, nullptr);
+                        if(shadowHitModelIndex != INVALID_INDEX)
+                        {
+                            pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 0.5f).color;
+                        }
+                        else
+                        {
+                            pixelColor = material.color;
+                        }
                     }
 
                     image[pixelIndex] = static_cast<uint8_t>(pixelColor.x * vignette);
