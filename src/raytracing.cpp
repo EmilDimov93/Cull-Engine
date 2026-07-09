@@ -11,31 +11,31 @@ namespace CL
     {
         constexpr float EPSILON = 0.0000001f;
 
-        clm::vec3 edge01 = pts[1] - pts[0];
-        clm::vec3 edge02 = pts[2] - pts[0];
+        const clm::vec3 edge01 = pts[1] - pts[0];
+        const clm::vec3 edge02 = pts[2] - pts[0];
 
-        clm::vec3 rayCrossEdge02 = rayVector.cross(edge02);
+        const clm::vec3 rayCrossEdge02 = rayVector.cross(edge02);
 
         float determinant = edge01.dot(rayCrossEdge02);
 
         if (determinant > -EPSILON && determinant < EPSILON)
             return false;
 
-        float inverseDeterminant = 1 / determinant;
-        clm::vec3 vertex0ToRayOrigin = rayOrigin - pts[0];
-        float barycentricU = inverseDeterminant * vertex0ToRayOrigin.dot(rayCrossEdge02);
+        const float inverseDeterminant = 1 / determinant;
+        const clm::vec3 vertex0ToRayOrigin = rayOrigin - pts[0];
+        const float barycentricU = inverseDeterminant * vertex0ToRayOrigin.dot(rayCrossEdge02);
 
         if (barycentricU < 0.0 || barycentricU > 1.0)
             return false;
 
-        clm::vec3 originCrossEdge01 = vertex0ToRayOrigin.cross(edge01);
+        const clm::vec3 originCrossEdge01 = vertex0ToRayOrigin.cross(edge01);
 
-        float barycentricV = inverseDeterminant * rayVector.dot(originCrossEdge01);
+        const float barycentricV = inverseDeterminant * rayVector.dot(originCrossEdge01);
 
         if (barycentricV < 0.0 || barycentricU + barycentricV > 1.0)
             return false;
 
-        float rayDistance = inverseDeterminant * edge02.dot(originCrossEdge01);
+        const float rayDistance = inverseDeterminant * edge02.dot(originCrossEdge01);
 
         if (rayDistance > EPSILON)
         {
@@ -54,7 +54,7 @@ namespace CL
 
         for (uint32_t i = 0; i < models.size(); i++)
         {
-            clm::mat4 modelMat = models[i].transform.mat();
+            const clm::mat4 modelMat = models[i].transform.mat();
             for (uint32_t j = 0; j < models[i].meshes.size(); j++)
             {
                 const Mesh &mesh = models[i].meshes[j];

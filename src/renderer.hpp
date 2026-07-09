@@ -34,16 +34,16 @@ namespace CL
     {
         clm::vec3 pos;
 
-        Vertex(clm::vec3 pos) : pos(pos) {}
+        constexpr Vertex(clm::vec3 pos) : pos(pos) {}
     };
 
     struct Material
     {
         clm::vec4 color;
 
-        Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}) : color(color) {}
+        constexpr Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}) : color(color) {}
 
-        Material tinted(clm::vec4 tint, float tintFactor) const
+        constexpr Material tinted(clm::vec4 tint, float tintFactor) const
         {
             tint = tint * tintFactor;
             clm::vec4 baseColor = color * (1.f - tintFactor);
@@ -108,14 +108,12 @@ namespace CL
 
         static constexpr float FOV = clm::PI / 3;
 
-        clm::vec4 SELECTED_MODEL_COLOR = clm::vec4(255.f, 255.f, 0.f, 255.f);
+        static constexpr clm::vec4 SELECTED_MODEL_COLOR = clm::vec4(255.f, 255.f, 0.f, 255.f);
 
-        std::vector<Model> models;
-
-        Model arrow;
-        Material arrowXMaterial = Material({255.f, 0.f, 0.f, 255.f});
-        Material arrowYMaterial = Material({0.f, 255.f, 0.f, 255.f});
-        Material arrowZMaterial = Material({0.f, 0.f, 255.f, 255.f});
+        Model gizmoArrow;
+        static constexpr Material gizmoArrowXMaterial = Material({255.f, 0.f, 0.f, 255.f});
+        static constexpr Material gizmoArrowYMaterial = Material({0.f, 255.f, 0.f, 255.f});
+        static constexpr Material gizmoArrowZMaterial = Material({0.f, 0.f, 255.f, 255.f});
         enum GizmoMode
         {
             GIZMO_MODE_NONE,
@@ -123,6 +121,8 @@ namespace CL
             GIZMO_MODE_Y_ARROW,
             GIZMO_MODE_Z_ARROW
         } gizmoMode = GIZMO_MODE_NONE;
+
+        std::vector<Model> models;
 
         double prevMouseX, prevMouseY;
 

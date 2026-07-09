@@ -2,44 +2,44 @@
 // Licensed under the Apache License, Version 2.0
 
 #include "renderer.hpp"
-#include <iostream>
+
 namespace CL
 {
     void fillTriangle(std::vector<uint8_t> &image, uint32_t width, uint32_t height, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
     {
-        int minX = std::max(0.f, std::min({pts[0].x, pts[1].x, pts[2].x}));
-        int maxX = std::min(static_cast<float>(width - 1), std::max({pts[0].x, pts[1].x, pts[2].x}));
-        int minY = std::max(0.f, std::min({pts[0].y, pts[1].y, pts[2].y}));
-        int maxY = std::min(static_cast<float>(height - 1), std::max({pts[0].y, pts[1].y, pts[2].y}));
+        const int32_t minX = std::max(0.f, std::min({pts[0].x, pts[1].x, pts[2].x}));
+        const int32_t maxX = std::min(static_cast<float>(width - 1), std::max({pts[0].x, pts[1].x, pts[2].x}));
+        const int32_t minY = std::max(0.f, std::min({pts[0].y, pts[1].y, pts[2].y}));
+        const int32_t maxY = std::min(static_cast<float>(height - 1), std::max({pts[0].y, pts[1].y, pts[2].y}));
 
-        auto edgeFunction = [](int x1, int y1, int x2, int y2, int px, int py) -> long long
+        auto edgeFunction = [](int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t px, int32_t py) -> int64_t
         {
-            return (long long)(x2 - x1) * (py - y1) - (long long)(y2 - y1) * (px - x1);
+            return static_cast<int64_t>(x2 - x1) * (py - y1) - static_cast<int64_t>(y2 - y1) * (px - x1);
         };
 
-        long long area = edgeFunction(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+        const int64_t area = edgeFunction(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
         if (area == 0)
             return;
 
-        for (int x = minX; x <= maxX; ++x)
+        for (int32_t x = minX; x <= maxX; ++x)
         {
-            for (int y = minY; y <= maxY; ++y)
+            for (int32_t y = minY; y <= maxY; ++y)
             {
-                long long w0 = edgeFunction(pts[1].x, pts[1].y, pts[2].x, pts[2].y, x, y);
-                long long w1 = edgeFunction(pts[2].x, pts[2].y, pts[0].x, pts[0].y, x, y);
-                long long w2 = edgeFunction(pts[0].x, pts[0].y, pts[1].x, pts[1].y, x, y);
+                const int64_t w0 = edgeFunction(pts[1].x, pts[1].y, pts[2].x, pts[2].y, x, y);
+                const int64_t w1 = edgeFunction(pts[2].x, pts[2].y, pts[0].x, pts[0].y, x, y);
+                const int64_t w2 = edgeFunction(pts[0].x, pts[0].y, pts[1].x, pts[1].y, x, y);
 
-                bool hasNeg = (w0 < 0) || (w1 < 0) || (w2 < 0);
-                bool hasPos = (w0 > 0) || (w1 > 0) || (w2 > 0);
+                const bool hasNeg = (w0 < 0) || (w1 < 0) || (w2 < 0);
+                const bool hasPos = (w0 > 0) || (w1 > 0) || (w2 > 0);
 
                 if (!(hasNeg && hasPos))
                 {
-                    float b0 = static_cast<float>(w0) / area;
-                    float b1 = static_cast<float>(w1) / area;
-                    float b2 = static_cast<float>(w2) / area;
-                    float depth = b0 * pts[0].z + b1 * pts[1].z + b2 * pts[2].z;
+                    const float b0 = static_cast<float>(w0) / area;
+                    const float b1 = static_cast<float>(w1) / area;
+                    const float b2 = static_cast<float>(w2) / area;
+                    const float depth = b0 * pts[0].z + b1 * pts[1].z + b2 * pts[2].z;
 
-                    uint32_t pixelIndex = width * y + x;
+                    const uint32_t pixelIndex = width * y + x;
                     if (depth < depthBuffer[pixelIndex])
                     {
                         depthBuffer[pixelIndex] = depth;
@@ -68,7 +68,7 @@ namespace CL
 
         for (uint32_t modelIndex = 0; modelIndex < models.size(); modelIndex++)
         {
-            clm::mat4 modelMat = models[modelIndex].transform.mat();
+            const clm::mat4 modelMat = models[modelIndex].transform.mat();
             for (const Mesh &mesh : models[modelIndex].meshes)
             {
                 const Material &material = models[modelIndex].materials[mesh.materialIndex];
@@ -98,11 +98,11 @@ namespace CL
 
                     if (currPoint == 2)
                     {
-                        clm::vec3 edge1 = pointsWorld[1] - pointsWorld[0];
-                        clm::vec3 edge2 = pointsWorld[2] - pointsWorld[0];
-                        clm::vec3 worldNormal = edge1.cross(edge2).normalized();
+                        const clm::vec3 edge1 = pointsWorld[1] - pointsWorld[0];
+                        const clm::vec3 edge2 = pointsWorld[2] - pointsWorld[0];
+                        const clm::vec3 worldNormal = edge1.cross(edge2).normalized();
 
-                        float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir));
+                        const float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir));
 
                         fillTriangle(image, windowWidth, windowHeight, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
                         currPoint = 0;
@@ -117,14 +117,14 @@ namespace CL
 
         if (selectedModelIndex != INVALID_INDEX)
         {
-            const clm::mat4 arrowXModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.2f, 0.4f, 0.2f}).mat();
-            const clm::mat4 arrowYModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
-            const clm::mat4 arrowZModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
+            const clm::mat4 gizmoArrowXModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.2f, 0.4f, 0.2f}).mat();
+            const clm::mat4 gizmoArrowYModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
+            const clm::mat4 gizmoArrowZModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
 
             std::vector<float> arrowDepthBuffer(windowWidth * windowHeight, std::numeric_limits<float>::infinity());
             auto drawArrow = [&](clm::mat4 modelMat, Material material)
             {
-                for (const Mesh &mesh : arrow.meshes)
+                for (const Mesh &mesh : gizmoArrow.meshes)
                 {
                     uint32_t currPoint = 0;
                     std::array<clm::vec3, 3> points;
@@ -163,9 +163,9 @@ namespace CL
                 }
             };
 
-            drawArrow(arrowXModelMat, arrowXMaterial);
-            drawArrow(arrowYModelMat, arrowYMaterial);
-            drawArrow(arrowZModelMat, arrowZMaterial);
+            drawArrow(gizmoArrowXModelMat, gizmoArrowXMaterial);
+            drawArrow(gizmoArrowYModelMat, gizmoArrowYMaterial);
+            drawArrow(gizmoArrowZModelMat, gizmoArrowZMaterial);
         }
 
         return image;

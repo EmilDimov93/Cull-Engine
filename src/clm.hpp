@@ -13,53 +13,53 @@ namespace clm
     {
         float x, y, z;
 
-        vec3(float x = 0.f, float y = 0.f, float z = 0.f) : x(x), y(y), z(z) {}
+        constexpr vec3(float x = 0.f, float y = 0.f, float z = 0.f) : x(x), y(y), z(z) {}
 
-        [[nodiscard]] vec3 operator*(const vec3 &other) const
+        [[nodiscard]] constexpr vec3 operator*(const vec3 &other) const
         {
             return vec3(x * other.x, y * other.y, z * other.z);
         }
 
-        [[nodiscard]] vec3 operator+(const vec3 &other) const
+        [[nodiscard]] constexpr vec3 operator+(const vec3 &other) const
         {
             return vec3(x + other.x, y + other.y, z + other.z);
         }
 
-        [[nodiscard]] vec3 operator-(const vec3 &other) const
+        [[nodiscard]] constexpr vec3 operator-(const vec3 &other) const
         {
             return vec3(x - other.x, y - other.y, z - other.z);
         }
 
-        void operator+=(const vec3 &other)
+        void constexpr operator+=(const vec3 &other)
         {
             x += other.x;
             y += other.y;
             z += other.z;
         }
 
-        [[nodiscard]] vec3 operator*(float scalar) const
+        [[nodiscard]] vec3 constexpr operator*(float scalar) const
         {
             return vec3(x * scalar, y * scalar, z * scalar);
         }
 
-        [[nodiscard]] float dot(vec3 other) const
+        [[nodiscard]] constexpr float dot(vec3 other) const
         {
             return x * other.x + y * other.y + z * other.z;
         }
 
-        [[nodiscard]] vec3 cross(vec3 other) const
+        [[nodiscard]] constexpr vec3 cross(vec3 other) const
         {
             return vec3(y * other.z - z * other.y,
                         z * other.x - x * other.z,
                         x * other.y - y * other.x);
         }
 
-        [[nodiscard]] float length() const
+        [[nodiscard]] constexpr float length() const
         {
             return std::sqrt(x * x + y * y + z * z);
         }
 
-        [[nodiscard]] vec3 normalized() const
+        [[nodiscard]] constexpr vec3 normalized() const
         {
             float len = length();
             return vec3(x / len, y / len, z / len);
@@ -70,17 +70,17 @@ namespace clm
     {
         float x, y, z, w;
 
-        [[nodiscard]] vec4 operator+(const vec4 &other) const
+        constexpr vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) : x(x), y(y), z(z), w(w) {}
+
+        [[nodiscard]] constexpr vec4 operator+(const vec4 &other) const
         {
             return vec4(x + other.x, y + other.y, z + other.z, w + other.w);
         }
 
-        [[nodiscard]] vec4 operator*(float scalar) const
+        [[nodiscard]] constexpr vec4 operator*(float scalar) const
         {
             return vec4(x * scalar, y * scalar, z * scalar, w * scalar);
         }
-
-        vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) : x(x), y(y), z(z), w(w) {}
     };
 
     struct mat4
@@ -94,10 +94,10 @@ namespace clm
     public:
         using Column = float[4];
 
-        Column &operator[](int col) { return mat[col]; }
-        const Column &operator[](int col) const { return mat[col]; }
+        constexpr Column &operator[](int col) { return mat[col]; }
+        constexpr const Column &operator[](int col) const { return mat[col]; }
 
-        [[nodiscard]] mat4 operator+(const mat4 &other) const
+        [[nodiscard]] constexpr mat4 operator+(const mat4 &other) const
         {
             mat4 result;
             for (int col = 0; col < 4; ++col)
@@ -106,7 +106,7 @@ namespace clm
             return result;
         };
 
-        [[nodiscard]] mat4 operator-(const mat4 &other) const
+        [[nodiscard]] constexpr mat4 operator-(const mat4 &other) const
         {
             mat4 result;
             for (int col = 0; col < 4; ++col)
@@ -115,7 +115,7 @@ namespace clm
             return result;
         };
 
-        [[nodiscard]] mat4 operator*(const mat4 &other) const
+        [[nodiscard]] constexpr mat4 operator*(const mat4 &other) const
         {
             mat4 result;
             for (int col = 0; col < 4; ++col)
@@ -127,7 +127,7 @@ namespace clm
             return result;
         };
 
-        [[nodiscard]] vec3 operator*(const vec3 &v) const
+        [[nodiscard]] constexpr vec3 operator*(const vec3 &v) const
         {
             return vec3(mat[0][0] * v.x + mat[1][0] * v.y + mat[2][0] * v.z + mat[3][0],
                         mat[0][1] * v.x + mat[1][1] * v.y + mat[2][1] * v.z + mat[3][1],
@@ -135,7 +135,7 @@ namespace clm
         }
     };
 
-    [[nodiscard]] inline mat4 translationMat(float x, float y, float z)
+    [[nodiscard]] constexpr inline mat4 translationMat(float x, float y, float z)
     {
         mat4 m;
 
@@ -146,12 +146,12 @@ namespace clm
         return m;
     }
 
-    [[nodiscard]] inline mat4 translationMat(vec3 translation)
+    [[nodiscard]] constexpr inline mat4 translationMat(vec3 translation)
     {
         return translationMat(translation.x, translation.y, translation.z);
     }
 
-    [[nodiscard]] inline mat4 rotationMat(float x, float y, float z)
+    [[nodiscard]] constexpr inline mat4 rotationMat(float x, float y, float z)
     {
         mat4 m;
 
@@ -177,7 +177,7 @@ namespace clm
         return m;
     }
 
-    [[nodiscard]] inline mat4 scaleMat(float x, float y, float z)
+    [[nodiscard]] constexpr inline mat4 scaleMat(float x, float y, float z)
     {
         mat4 m;
 
@@ -188,17 +188,17 @@ namespace clm
         return m;
     }
 
-    [[nodiscard]] inline mat4 scaleMat(float uniformScale)
+    [[nodiscard]] constexpr inline mat4 scaleMat(float uniformScale)
     {
         return scaleMat(uniformScale, uniformScale, uniformScale);
     }
 
-    inline float unitToSignedRange(float unitValue)
+    inline float constexpr unitToSignedRange(float unitValue)
     {
         return unitValue * 2.f - 1.f;
     }
 
-    inline float signedToUnitRange(float signedValue)
+    inline float constexpr signedToUnitRange(float signedValue)
     {
         return (signedValue + 1.f) / 2.f;
     }

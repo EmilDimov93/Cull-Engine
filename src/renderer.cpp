@@ -28,7 +28,7 @@ namespace CL
             r->windowWidth = static_cast<uint32_t>(width);
             r->windowHeight = static_cast<uint32_t>(height); });
 
-        arrow = loadOBJ("assets/gizmo_arrow.obj");
+        gizmoArrow = loadOBJ("assets/gizmo_arrow.obj");
     }
 
     Renderer::~Renderer()
@@ -44,7 +44,7 @@ namespace CL
     {
         while (!glfwWindowShouldClose(window))
         {
-            auto startTime = std::chrono::steady_clock::now();
+            const auto startTime = std::chrono::steady_clock::now();
 
             glfwPollEvents();
 
@@ -66,13 +66,13 @@ namespace CL
                     selectedModelIndex = findHoveredModel(mouseX, mouseY);
                     break;
                 case GIZMO_MODE_X_ARROW:
-                    models[selectedModelIndex].transform.pos.x += (mouseX - prevMouseX) / windowWidth;
+                    models[selectedModelIndex].transform.pos.x += static_cast<float>((mouseX - prevMouseX) / static_cast<double>(windowWidth));
                     break;
                 case GIZMO_MODE_Y_ARROW:
-                    models[selectedModelIndex].transform.pos.y += -(mouseY - prevMouseY) / windowHeight;
+                    models[selectedModelIndex].transform.pos.y += static_cast<float>(-(mouseY - prevMouseY) / static_cast<double>(windowHeight));
                     break;
                 case GIZMO_MODE_Z_ARROW:
-                    models[selectedModelIndex].transform.pos.z += (mouseX - prevMouseX) / windowWidth;
+                    models[selectedModelIndex].transform.pos.z += static_cast<float>((mouseX - prevMouseX) / static_cast<double>(windowWidth));
                     break;
                 }
             }
@@ -105,10 +105,10 @@ namespace CL
 
                 file.close();
 
-                int exitCode = std::system("start build\\img.ppm");
+                std::system("start build\\img.ppm");
             }
 
-            dt = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
+            dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
             std::cout << 1000.f / dt << std::endl;
         }
     }
@@ -127,15 +127,15 @@ namespace CL
         cameraRot.x += ((glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)) * clm::PI * dt * freeSpeed;
         cameraRot.x = std::clamp(cameraRot.x, -clm::PI / 2, clm::PI / 2);
 
-        float forwardBackward = ((glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)) * dt;
-        clm::vec3 forward = {cosf(cameraRot.x) * sinf(cameraRot.y), -sinf(cameraRot.x), cosf(cameraRot.x) * cosf(cameraRot.y)};
-        clm::vec3 forwardScaled = forward * forwardBackward;
+        const float forwardBackward = ((glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)) * dt;
+        const clm::vec3 forward = {cosf(cameraRot.x) * sinf(cameraRot.y), -sinf(cameraRot.x), cosf(cameraRot.x) * cosf(cameraRot.y)};
+        const clm::vec3 forwardScaled = forward * forwardBackward;
 
-        float leftRight = ((glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)) * dt;
-        clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
-        clm::vec3 rightScaled = right * leftRight;
+        const float leftRight = ((glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)) * dt;
+        const clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
+        const clm::vec3 rightScaled = right * leftRight;
 
-        clm::vec3 delta = (forwardScaled + rightScaled) * freeSpeed;
+        const clm::vec3 delta = (forwardScaled + rightScaled) * freeSpeed;
 
         cameraPos += delta;
 
@@ -160,11 +160,10 @@ namespace CL
 
         if (selectedModelIndex != INVALID_INDEX)
         {
-            std::vector<Model> arrows;
-            arrows.push_back(arrow);
+            std::vector<Model> gizmoArrows{gizmoArrow};
 
-            arrows[0].transform = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.4f, 0.4f, 0.4f});
-            castRay(arrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+            gizmoArrows[0].transform = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.4f, 0.4f, 0.4f});
+            castRay(gizmoArrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
 
             if (hitModelIndex != INVALID_INDEX)
             {
@@ -172,8 +171,8 @@ namespace CL
                 return selectedModelIndex;
             }
 
-            arrows[0].transform = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.4f, 0.4f, 0.4f});
-            castRay(arrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+            gizmoArrows[0].transform = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.4f, 0.4f, 0.4f});
+            castRay(gizmoArrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
 
             if (hitModelIndex != INVALID_INDEX)
             {
@@ -181,8 +180,8 @@ namespace CL
                 return selectedModelIndex;
             }
 
-            arrows[0].transform = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.4f, 0.4f, 0.4f});
-            castRay(arrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+            gizmoArrows[0].transform = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.4f, 0.4f, 0.4f});
+            castRay(gizmoArrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
 
             if (hitModelIndex != INVALID_INDEX)
             {
