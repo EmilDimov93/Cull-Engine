@@ -1,4 +1,4 @@
-// Copyright 2025 Emil Dimov
+// Copyright 2026 Emil Dimov
 // Licensed under the Apache License, Version 2.0
 
 /*
@@ -116,6 +116,15 @@ namespace CL
         Material arrowXMaterial = Material({255.f, 0.f, 0.f, 255.f});
         Material arrowYMaterial = Material({0.f, 255.f, 0.f, 255.f});
         Material arrowZMaterial = Material({0.f, 0.f, 255.f, 255.f});
+        enum GizmoMode
+        {
+            GIZMO_MODE_NONE,
+            GIZMO_MODE_X_ARROW,
+            GIZMO_MODE_Y_ARROW,
+            GIZMO_MODE_Z_ARROW
+        } gizmoMode = GIZMO_MODE_NONE;
+
+        double prevMouseX, prevMouseY;
 
         clm::vec3 clearColor;
 
@@ -141,6 +150,6 @@ namespace CL
 
         uint32_t findHoveredModel(uint32_t mouseX, uint32_t mouseY);
 
-        void castRay(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
+        static void castRay(const std::vector<Model> models, const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
     };
 }

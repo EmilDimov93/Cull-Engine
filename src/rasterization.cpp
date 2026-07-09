@@ -1,4 +1,4 @@
-// Copyright 2025 Emil Dimov
+// Copyright 2026 Emil Dimov
 // Licensed under the Apache License, Version 2.0
 
 #include "renderer.hpp"

@@ -1,4 +1,4 @@
-// Copyright 2025 Emil Dimov
+// Copyright 2026 Emil Dimov
 // Licensed under the Apache License, Version 2.0
 
 #include "renderer.hpp"
@@ -48,7 +48,7 @@ namespace CL
         }
     }
 
-    void Renderer::castRay(const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint)
+    void Renderer::castRay(const std::vector<Model> models, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint)
     {
         float closestDistance = std::numeric_limits<float>::max();
 
@@ -57,7 +57,7 @@ namespace CL
             clm::mat4 modelMat = models[i].transform.mat();
             for (uint32_t j = 0; j < models[i].meshes.size(); j++)
             {
-                Mesh &mesh = models[i].meshes[j];
+                const Mesh &mesh = models[i].meshes[j];
                 for (size_t indexOffset = 0; indexOffset + 2 < mesh.indices.size(); indexOffset += 3)
                 {
                     const std::array<clm::vec3, 3> pts = {
@@ -66,9 +66,9 @@ namespace CL
                         modelMat * mesh.vertices[mesh.indices[indexOffset + 2]].pos};
 
                     clm::vec3 intersectionPoint;
-                    if (RayIntersectsTriangle(cameraPos, rayDirection, pts, intersectionPoint))
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, pts, intersectionPoint))
                     {
-                        const float distance = (intersectionPoint - cameraPos).length();
+                        const float distance = (intersectionPoint - rayOrigin).length();
                         if (distance < closestDistance)
                         {
                             closestDistance = distance;
@@ -131,7 +131,7 @@ namespace CL
                     uint32_t hitModelIndex = INVALID_INDEX;
                     uint32_t hitMeshIndex = INVALID_INDEX;
                     clm::vec3 normal;
-                    castRay(cameraPos, rayDirection, &hitModelIndex, &hitMeshIndex, &normal, nullptr);
+                    castRay(models, cameraPos, rayDirection, &hitModelIndex, &hitMeshIndex, &normal, nullptr);
 
                     if (hitMeshIndex != INVALID_INDEX)
                     {

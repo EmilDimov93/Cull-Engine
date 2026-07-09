@@ -1,4 +1,4 @@
-// Copyright 2025 Emil Dimov
+// Copyright 2026 Emil Dimov
 // Licensed under the Apache License, Version 2.0
 
 #include "renderer.hpp"
@@ -55,14 +55,36 @@ namespace CL
             glDrawPixels(windowWidth, windowHeight, GL_RGB, GL_UNSIGNED_BYTE, image.data());
             glfwSwapBuffers(window);
 
-            if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS)
+            double mouseX, mouseY;
+            glfwGetCursorPos(window, &mouseX, &mouseY);
+
+            if ((glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS))
             {
-                double mouseX, mouseY;
-                glfwGetCursorPos(window, &mouseX, &mouseY);
-                selectedModelIndex = findHoveredModel(mouseX, mouseY);
+                switch (gizmoMode)
+                {
+                case GIZMO_MODE_NONE:
+                    selectedModelIndex = findHoveredModel(mouseX, mouseY);
+                    break;
+                case GIZMO_MODE_X_ARROW:
+                    models[selectedModelIndex].transform.pos.x += (mouseX - prevMouseX) / windowWidth;
+                    break;
+                case GIZMO_MODE_Y_ARROW:
+                    models[selectedModelIndex].transform.pos.y += -(mouseY - prevMouseY) / windowHeight;
+                    break;
+                case GIZMO_MODE_Z_ARROW:
+                    models[selectedModelIndex].transform.pos.z += (mouseX - prevMouseX) / windowWidth;
+                    break;
+                }
+            }
+            else
+            {
+                gizmoMode = GIZMO_MODE_NONE;
             }
 
-            if((glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_PRESS) && (selectedModelIndex != INVALID_INDEX))
+            prevMouseX = mouseX;
+            prevMouseY = mouseY;
+
+            if ((glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_PRESS) && (selectedModelIndex != INVALID_INDEX))
             {
                 models.erase(models.begin() + selectedModelIndex);
                 selectedModelIndex = INVALID_INDEX;
@@ -87,7 +109,7 @@ namespace CL
             }
 
             dt = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count();
-            // std::cout << 1000.f / dt << std::endl;
+            std::cout << 1000.f / dt << std::endl;
         }
     }
 
@@ -136,7 +158,40 @@ namespace CL
 
         uint32_t hitModelIndex = INVALID_INDEX;
 
-        castRay(cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+        if (selectedModelIndex != INVALID_INDEX)
+        {
+            std::vector<Model> arrows;
+            arrows.push_back(arrow);
+
+            arrows[0].transform = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.4f, 0.4f, 0.4f});
+            castRay(arrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+
+            if (hitModelIndex != INVALID_INDEX)
+            {
+                gizmoMode = GIZMO_MODE_X_ARROW;
+                return selectedModelIndex;
+            }
+
+            arrows[0].transform = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.4f, 0.4f, 0.4f});
+            castRay(arrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+
+            if (hitModelIndex != INVALID_INDEX)
+            {
+                gizmoMode = GIZMO_MODE_Y_ARROW;
+                return selectedModelIndex;
+            }
+
+            arrows[0].transform = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.4f, 0.4f, 0.4f});
+            castRay(arrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+
+            if (hitModelIndex != INVALID_INDEX)
+            {
+                gizmoMode = GIZMO_MODE_Z_ARROW;
+                return selectedModelIndex;
+            }
+        }
+
+        castRay(models, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
 
         return hitModelIndex;
     }
