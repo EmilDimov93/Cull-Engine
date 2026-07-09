@@ -28,7 +28,7 @@ namespace CL
             r->windowWidth = static_cast<uint32_t>(width);
             r->windowHeight = static_cast<uint32_t>(height); });
 
-        arrow = loadOBJ("build/arrow.obj");
+        arrow = loadOBJ("assets/gizmo_arrow.obj");
     }
 
     Renderer::~Renderer()
