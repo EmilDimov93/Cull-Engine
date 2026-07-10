@@ -94,8 +94,8 @@ namespace CL
 
             if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
             {
-                constexpr uint32_t imageWidth = 100;
-                constexpr uint32_t imageHeight = 100;
+                constexpr uint32_t imageWidth = 1000;
+                constexpr uint32_t imageHeight = 1000;
 
                 std::vector<uint8_t> image = getImageRayTraced(clm::vec2(imageWidth, imageHeight));
 

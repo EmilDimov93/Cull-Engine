@@ -43,9 +43,9 @@ namespace CL
                     if (depth < depthBuffer[pixelIndex])
                     {
                         depthBuffer[pixelIndex] = depth;
-                        image[pixelIndex * 3] = static_cast<uint8_t>(material.color.x * shade);
-                        image[pixelIndex * 3 + 1] = static_cast<uint8_t>(material.color.y * shade);
-                        image[pixelIndex * 3 + 2] = static_cast<uint8_t>(material.color.z * shade);
+                        image[pixelIndex * 3] = static_cast<uint8_t>(std::min(material.color.x * shade, 255.f));
+                        image[pixelIndex * 3 + 1] = static_cast<uint8_t>(std::min(material.color.y * shade, 255.f));
+                        image[pixelIndex * 3 + 2] = static_cast<uint8_t>(std::min(material.color.z * shade, 255.f));
                     }
                 }
             }
@@ -100,7 +100,8 @@ namespace CL
                         const clm::vec3 edge2 = pointsWorld[2] - pointsWorld[0];
                         const clm::vec3 worldNormal = edge1.cross(edge2).normalized();
 
-                        const float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir));
+                        const float ambient = 0.25f;
+                        const float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir) + ambient);
 
                         fillTriangle(image, windowSize, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
                         currPoint = 0;
