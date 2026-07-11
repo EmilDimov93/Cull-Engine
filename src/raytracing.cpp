@@ -135,7 +135,7 @@ namespace CL
 
                     if (hitMeshIndex != INVALID_INDEX)
                     {
-                        Material &material = models[hitModelIndex].materials[models[hitModelIndex].meshes[hitMeshIndex].materialIndex];
+                        const Material &material = models[hitModelIndex].materials[models[hitModelIndex].meshes[hitMeshIndex].materialIndex];
 
                         uint32_t shadowHitModelIndex = INVALID_INDEX;
                         castRay(models, intersectionPoint, surfaceToSunDir, &shadowHitModelIndex, nullptr, nullptr, nullptr);

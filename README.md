@@ -1,10 +1,10 @@
 # <img width="32" height="32" alt="Cull Logo" src="https://github.com/user-attachments/assets/6f2a77f9-1903-42d4-a531-e729fad6e302" /> Cull Engine
 
-![Language](https://img.shields.io/badge/C%2B%2B-23-00599C)
+![Language](https://img.shields.io/badge/C%2B%2B-20-00599C)
 ![License](https://img.shields.io/badge/license-Apache--2.0-purple)
 ![State](https://img.shields.io/badge/State-Development-CC5500)
 
-A multi-threaded CPU rendering engine used to produce high quality ray-traced images.
+A CPU rendering engine pairing a real-time scene editor with a multi-threaded offline ray tracer.
 
 | Editor | Result |
 | --- | --- |
