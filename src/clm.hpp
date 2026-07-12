@@ -214,4 +214,22 @@ namespace clm
     {
         return (signedValue + 1.f) / 2.f;
     }
+
+    struct quaternion
+    {
+        float w, x, y, z;
+
+        quaternion(float w, float x, float y, float z) : w(w), y(y), z(z), x(x) {}
+
+        quaternion operator*(quaternion other) const
+        {
+            const vec4 A(x, y, z, w);
+            const vec4 B(other.x, other.y, other.z, other.w);
+
+            return quaternion(-A.x * B.z + A.y * B.w + A.z * B.x + A.w * B.y,
+                              A.x * B.y + -A.y * B.x + A.z * B.w + A.w * B.z,
+                              -A.x * B.x + -A.y * B.y + -A.z * B.z + A.w * B.w,
+                              A.x * B.w + A.y * B.z + -A.z * B.y + A.w * B.x);
+        }
+    };
 }
