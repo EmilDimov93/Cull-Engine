@@ -219,17 +219,46 @@ namespace clm
     {
         float w, x, y, z;
 
-        quaternion(float w, float x, float y, float z) : w(w), y(y), z(z), x(x) {}
+        constexpr quaternion(float w = 1.f, float x = 0.f, float y = 0.f, float z = 0.f) : w(w), x(x), y(y), z(z) {}
 
-        quaternion operator*(quaternion other) const
+        [[nodiscard]] constexpr quaternion operator*(const quaternion &other) const
         {
             const vec4 A(x, y, z, w);
             const vec4 B(other.x, other.y, other.z, other.w);
 
-            return quaternion(-A.x * B.z + A.y * B.w + A.z * B.x + A.w * B.y,
-                              A.x * B.y + -A.y * B.x + A.z * B.w + A.w * B.z,
-                              -A.x * B.x + -A.y * B.y + -A.z * B.z + A.w * B.w,
-                              A.x * B.w + A.y * B.z + -A.z * B.y + A.w * B.x);
+            return quaternion(-A.x * B.x + -A.y * B.y + -A.z * B.z + A.w * B.w,
+                              A.x * B.w + A.y * B.z + -A.z * B.y + A.w * B.x,
+                              -A.x * B.z + A.y * B.w + A.z * B.x + A.w * B.y,
+                              A.x * B.y + -A.y * B.x + A.z * B.w + A.w * B.z);
+        }
+
+        [[nodiscard]] constexpr quaternion normalized() const
+        {
+            const float length = std::sqrt(w * w + x * x + y * y + z * z);
+
+            return quaternion(w / length, x / length, y / length, z / length);
+        }
+
+        [[nodiscard]] constexpr quaternion rotate(vec3 rotation) const
+        {
+            const float halfX = rotation.x / 2.f;
+            const float halfY = rotation.y / 2.f;
+            const float halfZ = rotation.z / 2.f;
+
+            const float cosX = std::cos(halfX);
+            const float sinX = std::sin(halfX);
+            const float cosY = std::cos(halfY);
+            const float sinY = std::sin(halfY);
+            const float cosZ = std::cos(halfZ);
+            const float sinZ = std::sin(halfZ);
+
+            const quaternion delta(
+                cosX * cosY * cosZ + sinX * sinY * sinZ,
+                sinX * cosY * cosZ - cosX * sinY * sinZ,
+                cosX * sinY * cosZ + sinX * cosY * sinZ,
+                cosX * cosY * sinZ - sinX * sinY * cosZ);
+
+            return (delta * (*this)).normalized();
         }
     };
 }
