@@ -74,7 +74,9 @@ namespace CL
 
             clm::mat4 mat() const
             {
-                return clm::translationMat(pos.x, pos.y, pos.z) * clm::rotationMat(rot.x, rot.y, rot.z) * clm::scaleMat(scale.x, scale.y, scale.z);
+                return clm::translationMat(pos.x, pos.y, pos.z)
+                * clm::quaternion().rotate(rot).mat()
+                * clm::scaleMat(scale.x, scale.y, scale.z);
             };
 
             Transform(clm::vec3 pos = {}, clm::vec3 rot = {}, clm::vec3 scale = {1.f, 1.f, 1.f}) : pos(pos), rot(rot), scale(scale) {}

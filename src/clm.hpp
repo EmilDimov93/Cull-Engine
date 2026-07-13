@@ -260,5 +260,28 @@ namespace clm
 
             return (delta * (*this)).normalized();
         }
+
+        [[nodiscard]] constexpr mat4 mat() const
+        {
+            const float xx = x * x, yy = y * y, zz = z * z;
+            const float xy = x * y, xz = x * z, yz = y * z;
+            const float wx = w * x, wy = w * y, wz = w * z;
+
+            mat4 result;
+
+            result[0][0] = 1.f - 2.f * (yy + zz);
+            result[0][1] = 2.f * (xy + wz);
+            result[0][2] = 2.f * (xz - wy);
+
+            result[1][0] = 2.f * (xy - wz);
+            result[1][1] = 1.f - 2.f * (xx + zz);
+            result[1][2] = 2.f * (yz + wx);
+
+            result[2][0] = 2.f * (xz + wy);
+            result[2][1] = 2.f * (yz - wx);
+            result[2][2] = 1.f - 2.f * (xx + yy);
+
+            return result;
+        }
     };
 }
