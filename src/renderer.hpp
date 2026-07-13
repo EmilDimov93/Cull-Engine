@@ -69,13 +69,13 @@ namespace CL
         struct Transform
         {
             clm::vec3 pos;
-            clm::vec3 rot;
+            clm::quaternion rot;
             clm::vec3 scale;
 
             clm::mat4 mat() const
             {
                 return clm::translationMat(pos.x, pos.y, pos.z)
-                * clm::quaternion().rotate(rot).mat()
+                * rot.mat()
                 * clm::scaleMat(scale.x, scale.y, scale.z);
             };
 
@@ -119,11 +119,18 @@ namespace CL
         static constexpr Material gizmoArrowZMaterial = Material({0.f, 0.f, 255.f, 255.f});
         enum GizmoMode
         {
-            GIZMO_MODE_NONE,
-            GIZMO_MODE_X_ARROW,
-            GIZMO_MODE_Y_ARROW,
-            GIZMO_MODE_Z_ARROW
-        } gizmoMode = GIZMO_MODE_NONE;
+            GIZMO_MODE_TRANSLATE,
+            GIZMO_MODE_ROTATE,
+            GIZMO_MODE_SCALE
+        } gizmoMode = GIZMO_MODE_TRANSLATE;
+        enum GizmoDrag
+        {
+            GIZMO_DRAG_NONE,
+            GIZMO_DRAG_X_ARROW,
+            GIZMO_DRAG_Y_ARROW,
+            GIZMO_DRAG_Z_ARROW
+        } gizmoDrag = GIZMO_DRAG_NONE;
+        bool wasGPressed = false;
 
         std::vector<Model> models;
 

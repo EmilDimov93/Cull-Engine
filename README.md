@@ -24,5 +24,6 @@ A CPU rendering engine pairing a real-time scene editor with a multi-threaded of
 | Rotate camera | Arrow keys |
 | Render to `.ppm` | `R` |
 | Select model | Left mouse button |
-| Move model | Select, use gizmo |
-| Delete model | Select, then `Delete` |
+| Use gizmo | Select model, use arrows |
+| Change gizmo mode | `G` |
+| Delete model | Select model, then `Delete` |

@@ -220,6 +220,7 @@ namespace clm
         float w, x, y, z;
 
         constexpr quaternion(float w = 1.f, float x = 0.f, float y = 0.f, float z = 0.f) : w(w), x(x), y(y), z(z) {}
+        constexpr quaternion(vec3 rot) : quaternion() { *this = rotate(rot); }
 
         [[nodiscard]] constexpr quaternion operator*(const quaternion &other) const
         {

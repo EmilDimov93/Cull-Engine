@@ -61,27 +61,77 @@ namespace CL
             double mouseX, mouseY;
             glfwGetCursorPos(window, &mouseX, &mouseY);
 
+            if ((glfwGetKey(window, GLFW_KEY_G) == GLFW_PRESS))
+            {
+                if (!wasGPressed)
+                {
+                    wasGPressed = true;
+                    gizmoMode = static_cast<GizmoMode>((gizmoMode + 1) % 3);
+                }
+            }
+            else
+            {
+                wasGPressed = false;
+            }
+
+            constexpr float dragSensitivity = 0.01f;
             if ((glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS))
             {
-                switch (gizmoMode)
+                const float deltaX = static_cast<float>(mouseX) - prevMousePos.x;
+                const float deltaY = static_cast<float>(mouseY) - prevMousePos.y;
+
+                switch (gizmoDrag)
                 {
-                case GIZMO_MODE_NONE:
+                case GIZMO_DRAG_NONE:
                     selectedModelIndex = findHoveredModel(mouseX, mouseY);
                     break;
-                case GIZMO_MODE_X_ARROW:
-                    models[selectedModelIndex].transform.pos.x += (static_cast<float>(mouseX) - prevMousePos.x) / windowSize.x;
+                case GIZMO_DRAG_X_ARROW:
+                    switch (gizmoMode)
+                    {
+                    case GIZMO_MODE_TRANSLATE:
+                        models[selectedModelIndex].transform.pos.x += deltaX * dragSensitivity;
+                        break;
+                    case GIZMO_MODE_ROTATE:
+                        models[selectedModelIndex].transform.rot = models[selectedModelIndex].transform.rot.rotate({0.f, deltaX * dragSensitivity, 0.f});
+                        break;
+                    case GIZMO_MODE_SCALE:
+                        models[selectedModelIndex].transform.scale.x += deltaX * dragSensitivity;
+                        break;
+                    }
                     break;
-                case GIZMO_MODE_Y_ARROW:
-                    models[selectedModelIndex].transform.pos.y += (-static_cast<float>(mouseY) - prevMousePos.y) / windowSize.y;
+                case GIZMO_DRAG_Y_ARROW:
+                    switch (gizmoMode)
+                    {
+                    case GIZMO_MODE_TRANSLATE:
+                        models[selectedModelIndex].transform.pos.y += -deltaY * dragSensitivity;
+                        break;
+                    case GIZMO_MODE_ROTATE:
+                        models[selectedModelIndex].transform.rot = models[selectedModelIndex].transform.rot.rotate({0.f, 0.f, -deltaY * dragSensitivity});
+                        break;
+                    case GIZMO_MODE_SCALE:
+                        models[selectedModelIndex].transform.scale.y += -deltaY * dragSensitivity;
+                        break;
+                    }
                     break;
-                case GIZMO_MODE_Z_ARROW:
-                    models[selectedModelIndex].transform.pos.z += (static_cast<float>(mouseX) - prevMousePos.x) / windowSize.x;
+                case GIZMO_DRAG_Z_ARROW:
+                    switch (gizmoMode)
+                    {
+                    case GIZMO_MODE_TRANSLATE:
+                        models[selectedModelIndex].transform.pos.z += deltaX * dragSensitivity;
+                        break;
+                    case GIZMO_MODE_ROTATE:
+                        models[selectedModelIndex].transform.rot = models[selectedModelIndex].transform.rot.rotate({deltaX * dragSensitivity, 0.f, 0.f});
+                        break;
+                    case GIZMO_MODE_SCALE:
+                        models[selectedModelIndex].transform.scale.z += deltaX * dragSensitivity;
+                        break;
+                    }
                     break;
                 }
             }
             else
             {
-                gizmoMode = GIZMO_MODE_NONE;
+                gizmoDrag = GIZMO_DRAG_NONE;
             }
 
             prevMousePos = {static_cast<float>(mouseX), static_cast<float>(mouseY)};
@@ -167,7 +217,7 @@ namespace CL
 
             if (hitModelIndex != INVALID_INDEX)
             {
-                gizmoMode = GIZMO_MODE_X_ARROW;
+                gizmoDrag = GIZMO_DRAG_X_ARROW;
                 return selectedModelIndex;
             }
 
@@ -176,7 +226,7 @@ namespace CL
 
             if (hitModelIndex != INVALID_INDEX)
             {
-                gizmoMode = GIZMO_MODE_Y_ARROW;
+                gizmoDrag = GIZMO_DRAG_Y_ARROW;
                 return selectedModelIndex;
             }
 
@@ -185,7 +235,7 @@ namespace CL
 
             if (hitModelIndex != INVALID_INDEX)
             {
-                gizmoMode = GIZMO_MODE_Z_ARROW;
+                gizmoDrag = GIZMO_DRAG_Z_ARROW;
                 return selectedModelIndex;
             }
         }

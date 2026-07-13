@@ -11,7 +11,7 @@ int main()
 
     Model car = renderer.loadOBJ("build/vw/vw.obj");
     car.transform.pos = {2.f, -1.f, 8.f};
-    car.transform.rot = {0.f, clm::PI * 5.f / 4.f, 0.f};
+    car.transform.rot = clm::quaternion().rotate({0.f, clm::PI * 5.f / 4.f, 0.f});
 
     Model cow = renderer.loadOBJ("build/cow.obj");
     cow.transform = Model::Transform({-1.5f, -1.f, 8.f}, {0.f, clm::PI * 2.f / 3.f, 0.f}, {0.7f, 0.7f, 0.7f});
