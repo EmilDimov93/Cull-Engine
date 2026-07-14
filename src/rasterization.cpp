@@ -5,7 +5,7 @@
 
 namespace CL
 {
-    void fillTriangle(std::vector<uint8_t> &image, clm::vec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
+    static void drawTriangleSolid(std::vector<uint8_t> &image, clm::vec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
     {
         const int32_t minX = std::max(0.f, std::min({pts[0].x, pts[1].x, pts[2].x}));
         const int32_t maxX = std::min(imageSize.x - 1.f, std::max({pts[0].x, pts[1].x, pts[2].x}));
@@ -50,6 +50,65 @@ namespace CL
                 }
             }
         }
+    }
+
+    static void drawTriangleWireframe(std::vector<uint8_t> &image, clm::vec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
+    {
+        auto drawLine = [&](clm::vec3 start, clm::vec3 end)
+        {
+            int32_t currentX = static_cast<int32_t>(start.x);
+            int32_t currentY = static_cast<int32_t>(start.y);
+            const int32_t endX = static_cast<int32_t>(end.x);
+            const int32_t endY = static_cast<int32_t>(end.y);
+
+            const int32_t deltaX = std::abs(endX - currentX);
+            const int32_t deltaY = std::abs(endY - currentY);
+            const int32_t stepX = (currentX < endX) ? 1 : -1;
+            const int32_t stepY = (currentY < endY) ? 1 : -1;
+            int32_t error = deltaX - deltaY;
+
+            const int32_t totalSteps = std::max(deltaX, deltaY);
+            int32_t stepIndex = 0;
+
+            while (true)
+            {
+                if (currentX >= 0 && currentX < static_cast<int32_t>(imageSize.x) &&
+                    currentY >= 0 && currentY < static_cast<int32_t>(imageSize.y))
+                {
+                    const float t = (totalSteps == 0) ? 0.f : static_cast<float>(stepIndex) / totalSteps;
+                    const float depth = start.z + (end.z - start.z) * t;
+
+                    const uint32_t pixelIndex = static_cast<uint32_t>(imageSize.x) * currentY + currentX;
+                    if (depth < depthBuffer[pixelIndex])
+                    {
+                        depthBuffer[pixelIndex] = depth;
+                        image[pixelIndex * 3] = static_cast<uint8_t>(std::min(material.color.x * shade, 255.f));
+                        image[pixelIndex * 3 + 1] = static_cast<uint8_t>(std::min(material.color.y * shade, 255.f));
+                        image[pixelIndex * 3 + 2] = static_cast<uint8_t>(std::min(material.color.z * shade, 255.f));
+                    }
+                }
+
+                if (currentX == endX && currentY == endY)
+                    break;
+
+                const int32_t doubledError = 2 * error;
+                if (doubledError > -deltaY)
+                {
+                    error -= deltaY;
+                    currentX += stepX;
+                }
+                if (doubledError < deltaX)
+                {
+                    error += deltaX;
+                    currentY += stepY;
+                }
+                ++stepIndex;
+            }
+        };
+
+        drawLine(pts[0], pts[1]);
+        drawLine(pts[1], pts[2]);
+        drawLine(pts[2], pts[0]);
     }
 
     const std::vector<uint8_t> Renderer::getImageRasterized()
@@ -103,7 +162,10 @@ namespace CL
                         const float ambient = 0.25f;
                         const float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir) + ambient);
 
-                        fillTriangle(image, windowSize, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
+                        if (editorViewMode == EDITOR_VIEW_WIREFRAME)
+                            drawTriangleWireframe(image, windowSize, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
+                        else
+                            drawTriangleSolid(image, windowSize, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
                         currPoint = 0;
                     }
                     else
@@ -149,7 +211,7 @@ namespace CL
 
                         if (currPoint == 2)
                         {
-                            fillTriangle(image, windowSize, points, arrowDepthBuffer, material, 1.f);
+                            drawTriangleSolid(image, windowSize, points, arrowDepthBuffer, material, 1.f);
                             currPoint = 0;
                         }
                         else

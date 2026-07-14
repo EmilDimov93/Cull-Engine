@@ -132,6 +132,12 @@ namespace CL
         } gizmoDrag = GIZMO_DRAG_NONE;
         bool wasGPressed = false;
 
+        enum EditorViewMode
+        {
+            EDITOR_VIEW_WIREFRAME,
+            EDITOR_VIEW_SOLID
+        } editorViewMode = EDITOR_VIEW_WIREFRAME;
+
         std::vector<Model> models;
 
         clm::vec2 prevMousePos;

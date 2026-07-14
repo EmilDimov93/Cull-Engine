@@ -134,6 +134,11 @@ namespace CL
                 gizmoDrag = GIZMO_DRAG_NONE;
             }
 
+            if ((glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS))
+                editorViewMode = EDITOR_VIEW_SOLID;
+            else
+                editorViewMode = EDITOR_VIEW_WIREFRAME;
+
             prevMousePos = {static_cast<float>(mouseX), static_cast<float>(mouseY)};
 
             if ((glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_PRESS) && (selectedModelIndex != INVALID_INDEX))
