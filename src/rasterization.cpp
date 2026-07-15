@@ -56,6 +56,11 @@ namespace CL
     {
         auto drawLine = [&](clm::vec3 start, clm::vec3 end)
         {
+            const float maxX = imageSize.x - 1.f;
+            const float maxY = imageSize.y - 1.f;
+            if (start.x < 0.f || start.x > maxX || start.y < 0.f || start.y > maxY || end.x < 0.f || end.x > maxX || end.y < 0.f || end.y > maxY)
+                return;
+
             int32_t currentX = static_cast<int32_t>(start.x);
             int32_t currentY = static_cast<int32_t>(start.y);
             const int32_t endX = static_cast<int32_t>(end.x);
