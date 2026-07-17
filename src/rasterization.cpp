@@ -232,6 +232,27 @@ namespace CL
             drawArrow(gizmoArrowZModelMat, gizmoArrowZMaterial);
         }
 
+        if (isCursorHighlighted)
+        {
+            double mouseX;
+            double mouseY;
+            glfwGetCursorPos(window, &mouseX, &mouseY);
+
+            if (mouseX >= 0 && mouseX < windowSize.x && mouseY >= 0 && mouseY < windowSize.y)
+            {
+                mouseY = windowSize.y - mouseY;
+                for (int i = mouseX - 10; i < mouseX + 10; i++)
+                {
+                    for (int j = mouseY - 10; j < mouseY + 10; j++)
+                    {
+                        image[j * windowSize.x * 3 + i * 3] = 255.f;
+                        image[j * windowSize.x * 3 + i * 3 + 1] = 0.f;
+                        image[j * windowSize.x * 3 + i * 3 + 2] = 0.f;
+                    }
+                }
+            }
+        }
+
         return image;
     }
 }

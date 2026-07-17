@@ -138,6 +138,8 @@ namespace CL
             EDITOR_VIEW_SOLID
         } editorViewMode = EDITOR_VIEW_WIREFRAME;
 
+        bool isCursorHighlighted = true;
+
         std::vector<Model> models;
 
         clm::vec2 prevMousePos;
