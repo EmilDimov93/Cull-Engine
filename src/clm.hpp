@@ -78,6 +78,7 @@ namespace clm
         float x, y, z, w;
 
         constexpr vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) : x(x), y(y), z(z), w(w) {}
+        constexpr vec4(vec3 v3, float w) : x(v3.x), y(v3.y), z(v3.z), w(w) {}
 
         [[nodiscard]] constexpr vec4 operator+(const vec4 &other) const
         {
@@ -145,6 +146,14 @@ namespace clm
                         mat[0][1] * v.x + mat[1][1] * v.y + mat[2][1] * v.z + mat[3][1],
                         mat[0][2] * v.x + mat[1][2] * v.y + mat[2][2] * v.z + mat[3][2]);
         }
+
+        [[nodiscard]] constexpr vec4 operator*(const vec4 &v) const
+        {
+            return vec4(mat[0][0] * v.x + mat[1][0] * v.y + mat[2][0] * v.z + mat[3][0] * v.w,
+                        mat[0][1] * v.x + mat[1][1] * v.y + mat[2][1] * v.z + mat[3][1] * v.w,
+                        mat[0][2] * v.x + mat[1][2] * v.y + mat[2][2] * v.z + mat[3][2] * v.w,
+                        mat[0][3] * v.x + mat[1][3] * v.y + mat[2][3] * v.z + mat[3][3] * v.w);
+        }
     };
 
     [[nodiscard]] constexpr inline mat4 translationMat(float x, float y, float z)
@@ -209,18 +218,13 @@ namespace clm
     {
         mat4 m;
 
-        float f = 1.0f / std::tan(fieldOfView / 2.f);
-        
+        const float f = 1.0f / std::tan(fieldOfView / 2.f);
+
         m[0][0] = f / aspectRatio;
-
         m[1][1] = f;
-
         m[2][2] = (zFar + zNear) / (zNear - zFar);
-
         m[3][2] = (2.f * zFar * zNear) / (zNear - zFar);
-
-        m[2][3] = -1.f;
-
+        m[2][3] = 1.f;
         m[3][3] = 0.f;
 
         return m;
