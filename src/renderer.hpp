@@ -138,8 +138,6 @@ namespace CL
             EDITOR_VIEW_SOLID
         } editorViewMode = EDITOR_VIEW_WIREFRAME;
 
-        bool isCursorHighlighted = true;
-
         std::vector<Model> models;
 
         clm::vec2 prevMousePos;
@@ -161,6 +159,7 @@ namespace CL
         GLFWwindow *window;
         clm::vec2 windowSize;
         float aspectRatio;
+        clm::mat4 projectionMat;
 
         [[nodiscard]] const std::vector<uint8_t> getImageRasterized();
         [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(clm::vec2 imageSize);

@@ -151,11 +151,11 @@ namespace CL
                         continue;
                     }
 
-                    const float ndcX = pointsView[currPoint].x / (pointsView[currPoint].z * TAN_HALF_FOV * aspectRatio);
-                    const float ndcY = pointsView[currPoint].y / (pointsView[currPoint].z * TAN_HALF_FOV);
+                    const clm::vec4 pointClip = projectionMat * clm::vec4(pointsView[currPoint], 1.f);
+                    const clm::vec2 ndc(pointClip.x / pointClip.w, pointClip.y / pointClip.w);
 
-                    points[currPoint] = {clm::signedToUnitRange(ndcX) * windowSize.x,
-                                         clm::signedToUnitRange(ndcY) * windowSize.y,
+                    points[currPoint] = {clm::signedToUnitRange(ndc.x) * windowSize.x,
+                                         clm::signedToUnitRange(ndc.y) * windowSize.y,
                                          pointsView[currPoint].z};
 
                     if (currPoint == 2)
@@ -207,11 +207,11 @@ namespace CL
                             continue;
                         }
 
-                        const float ndcX = pointsView[currPoint].x / (pointsView[currPoint].z * TAN_HALF_FOV * aspectRatio);
-                        const float ndcY = pointsView[currPoint].y / (pointsView[currPoint].z * TAN_HALF_FOV);
+                        const clm::vec4 pointClip = projectionMat * clm::vec4(pointsView[currPoint], 1.f);
+                        const clm::vec2 ndc(pointClip.x / pointClip.w, pointClip.y / pointClip.w);
 
-                        points[currPoint] = {clm::signedToUnitRange(ndcX) * windowSize.x,
-                                             clm::signedToUnitRange(ndcY) * windowSize.y,
+                        points[currPoint] = {clm::signedToUnitRange(ndc.x) * windowSize.x,
+                                             clm::signedToUnitRange(ndc.y) * windowSize.y,
                                              pointsView[currPoint].z};
 
                         if (currPoint == 2)
@@ -232,22 +232,26 @@ namespace CL
             drawArrow(gizmoArrowZModelMat, gizmoArrowZMaterial);
         }
 
-        if (isCursorHighlighted)
         {
-            double mouseX;
-            double mouseY;
-            glfwGetCursorPos(window, &mouseX, &mouseY);
+            const clm::vec4 originClip = projectionMat * viewMat * clm::vec4(0.f, 0.f, 0.f, 1.f);
+            const clm::vec3 ndc = {originClip.x / originClip.w, originClip.y / originClip.w, originClip.z / originClip.w};
+            const float screenX = clm::signedToUnitRange(ndc.x) * windowSize.x;
+            const float screenY = clm::signedToUnitRange(ndc.y) * windowSize.y;
 
-            if (mouseX >= 0 && mouseX < windowSize.x && mouseY >= 0 && mouseY < windowSize.y)
+            static constexpr float markerSize = 10.f;
+
+            if (originClip.w > 0.f)
             {
-                mouseY = windowSize.y - mouseY;
-                for (int i = mouseX - 10; i < mouseX + 10; i++)
+                if (screenX >= markerSize && screenX < windowSize.x - markerSize && screenY >= markerSize && screenY < windowSize.y - markerSize)
                 {
-                    for (int j = mouseY - 10; j < mouseY + 10; j++)
+                    for (uint32_t i = screenX - markerSize; i < screenX + markerSize; i++)
                     {
-                        image[j * windowSize.x * 3 + i * 3] = 255.f;
-                        image[j * windowSize.x * 3 + i * 3 + 1] = 0.f;
-                        image[j * windowSize.x * 3 + i * 3 + 2] = 0.f;
+                        for (uint32_t j = screenY - markerSize; j < screenY + markerSize; j++)
+                        {
+                            image[j * windowSize.x * 3 + i * 3] = 255.f;
+                            image[j * windowSize.x * 3 + i * 3 + 1] = 0.f;
+                            image[j * windowSize.x * 3 + i * 3 + 2] = 0.f;
+                        }
                     }
                 }
             }

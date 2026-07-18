@@ -13,6 +13,7 @@ namespace CL
     {
         this->windowSize = windowSize;
         aspectRatio = windowSize.x / windowSize.y;
+        projectionMat = clm::perspectiveProjectionMat(FOV, aspectRatio, 0.001f, 1000.f);
 
         if (!glfwInit())
             exit(1);
@@ -29,7 +30,8 @@ namespace CL
                                        {
             Renderer *r = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
             r->windowSize = {static_cast<float>(width), static_cast<float>(height)};
-            r->aspectRatio = r->windowSize.x / r->windowSize.y; });
+            r->aspectRatio = r->windowSize.x / r->windowSize.y;
+            r->projectionMat = clm::perspectiveProjectionMat(FOV, r->aspectRatio, 0.001f, 1000.f); });
 
         gizmoArrow = loadOBJ("assets/gizmo_arrow.obj");
     }
