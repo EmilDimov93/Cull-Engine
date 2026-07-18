@@ -18,7 +18,7 @@ namespace CL
         if (!glfwInit())
             exit(1);
 
-        window = glfwCreateWindow(static_cast<int>(windowSize.x), static_cast<int>(windowSize.y), "Ray-Tracer", nullptr, nullptr);
+        window = glfwCreateWindow(static_cast<int>(windowSize.x), static_cast<int>(windowSize.y), "Cull Engine - Editor", nullptr, nullptr);
         if (!window)
             exit(1);
 
@@ -45,7 +45,7 @@ namespace CL
         glfwTerminate();
     }
 
-    void Renderer::run()
+    void Renderer::runEditor()
     {
         while (!glfwWindowShouldClose(window))
         {
@@ -136,12 +136,12 @@ namespace CL
                 gizmoDrag = GIZMO_DRAG_NONE;
             }
 
+            prevMousePos = {static_cast<float>(mouseX), static_cast<float>(mouseY)};
+
             if ((glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS))
                 editorViewMode = EDITOR_VIEW_SOLID;
             else
                 editorViewMode = EDITOR_VIEW_WIREFRAME;
-
-            prevMousePos = {static_cast<float>(mouseX), static_cast<float>(mouseY)};
 
             if ((glfwGetKey(window, GLFW_KEY_DELETE) == GLFW_PRESS) && (selectedModelIndex != INVALID_INDEX))
             {
@@ -150,27 +150,27 @@ namespace CL
             }
 
             if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-            {
-                constexpr uint32_t imageWidth = 1000;
-                constexpr uint32_t imageHeight = 1000;
-
-                std::vector<uint8_t> image = getImageRayTraced(clm::vec2(imageWidth, imageHeight));
-
-                std::ofstream file("build/img.ppm", std::ios::binary);
-
-                file << "P6\n"
-                     << imageWidth << ' ' << imageHeight << "\n255\n";
-
-                file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(imageWidth) * imageHeight * 3);
-
-                file.close();
-
-                std::system("start build\\img.ppm");
-            }
+                renderToPPM({100.f, 100.f});
 
             dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
             std::cout << 1000.f / dt << std::endl;
         }
+    }
+
+    void Renderer::renderToPPM(clm::vec2 imageSize)
+    {
+        std::vector<uint8_t> image = getImageRayTraced(imageSize);
+
+        std::ofstream file("build/result.ppm", std::ios::binary);
+
+        file << "P6\n"
+             << static_cast<uint32_t>(imageSize.x) << ' ' << static_cast<uint32_t>(imageSize.y) << "\n255\n";
+
+        file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(imageSize.x) * static_cast<std::streamsize>(imageSize.y) * 3);
+
+        file.close();
+
+        std::system("start build\\result.ppm");
     }
 
     void Renderer::addModel(Model &model)
@@ -180,11 +180,11 @@ namespace CL
 
     void Renderer::updateCamera()
     {
-        const float freeSpeed = 0.001f;
+        const float speed = 0.001f;
 
-        cameraRot.y += ((glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)) * clm::PI * dt * freeSpeed;
+        cameraRot.y += ((glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)) * clm::PI * dt * speed;
 
-        cameraRot.x += ((glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)) * clm::PI * dt * freeSpeed;
+        cameraRot.x += ((glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)) * clm::PI * dt * speed;
         cameraRot.x = std::clamp(cameraRot.x, -clm::PI / 2, clm::PI / 2);
 
         const float forwardBackward = ((glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)) * dt;
@@ -195,7 +195,7 @@ namespace CL
         const clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
         const clm::vec3 rightScaled = right * leftRight;
 
-        const clm::vec3 delta = (forwardScaled + rightScaled) * freeSpeed;
+        const clm::vec3 delta = (forwardScaled + rightScaled) * speed;
 
         cameraPos += delta;
 

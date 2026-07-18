@@ -17,7 +17,7 @@ Delete model: select it then press Delete
 
 #pragma once
 
-#include "clm.hpp"
+#include "../math/clm.hpp"
 
 #include <vector>
 #include <cstdint>
@@ -103,7 +103,8 @@ namespace CL
             surfaceToSunDir = surfaceToSunDir * -1;
         }
 
-        void run();
+        void runEditor();
+        void renderToPPM(clm::vec2 imageSize);
 
     private:
         static constexpr uint32_t INVALID_INDEX = std::numeric_limits<uint32_t>::max();

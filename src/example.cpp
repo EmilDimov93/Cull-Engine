@@ -1,7 +1,7 @@
 // Copyright 2026 Emil Dimov
 // Licensed under the Apache License, Version 2.0
 
-#include "renderer.hpp"
+#include "renderer/renderer.hpp"
 
 using namespace CL;
 
@@ -26,5 +26,5 @@ int main()
 
     renderer.setVignetteStrength(1.f);
 
-    renderer.run();
+    renderer.runEditor();
 }
