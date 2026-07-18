@@ -52,68 +52,82 @@ namespace CL
         }
     }
 
-    static void drawTriangleWireframe(std::vector<uint8_t> &image, clm::vec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
+    void drawLine(clm::vec3 start, clm::vec3 end, uint8_t *image, float *depthBuffer, const clm::vec2 &imageSize, const Material &material, float shade)
     {
-        auto drawLine = [&](clm::vec3 start, clm::vec3 end)
+        const int32_t width = static_cast<int32_t>(imageSize.x);
+        const int32_t height = static_cast<int32_t>(imageSize.y);
+
+        int32_t currentX = static_cast<int32_t>(std::floor(start.x));
+        int32_t currentY = static_cast<int32_t>(std::floor(start.y));
+        int32_t endX = static_cast<int32_t>(std::floor(end.x));
+        int32_t endY = static_cast<int32_t>(std::floor(end.y));
+
+        const auto isInside = [&](int32_t x, int32_t y)
         {
-            const float maxX = imageSize.x - 1.f;
-            const float maxY = imageSize.y - 1.f;
-            if (start.x < 0.f || start.x > maxX || start.y < 0.f || start.y > maxY || end.x < 0.f || end.x > maxX || end.y < 0.f || end.y > maxY)
-                return;
-
-            int32_t currentX = static_cast<int32_t>(start.x);
-            int32_t currentY = static_cast<int32_t>(start.y);
-            const int32_t endX = static_cast<int32_t>(end.x);
-            const int32_t endY = static_cast<int32_t>(end.y);
-
-            const int32_t deltaX = std::abs(endX - currentX);
-            const int32_t deltaY = std::abs(endY - currentY);
-            const int32_t stepX = (currentX < endX) ? 1 : -1;
-            const int32_t stepY = (currentY < endY) ? 1 : -1;
-            int32_t error = deltaX - deltaY;
-
-            const int32_t totalSteps = std::max(deltaX, deltaY);
-            int32_t stepIndex = 0;
-
-            while (true)
-            {
-                if (currentX >= 0 && currentX < static_cast<int32_t>(imageSize.x) &&
-                    currentY >= 0 && currentY < static_cast<int32_t>(imageSize.y))
-                {
-                    const float t = (totalSteps == 0) ? 0.f : static_cast<float>(stepIndex) / totalSteps;
-                    const float depth = start.z + (end.z - start.z) * t;
-
-                    const uint32_t pixelIndex = static_cast<uint32_t>(imageSize.x) * currentY + currentX;
-                    if (depth < depthBuffer[pixelIndex])
-                    {
-                        depthBuffer[pixelIndex] = depth;
-                        image[pixelIndex * 3] = static_cast<uint8_t>(std::min(material.color.x * shade, 255.f));
-                        image[pixelIndex * 3 + 1] = static_cast<uint8_t>(std::min(material.color.y * shade, 255.f));
-                        image[pixelIndex * 3 + 2] = static_cast<uint8_t>(std::min(material.color.z * shade, 255.f));
-                    }
-                }
-
-                if (currentX == endX && currentY == endY)
-                    break;
-
-                const int32_t doubledError = 2 * error;
-                if (doubledError > -deltaY)
-                {
-                    error -= deltaY;
-                    currentX += stepX;
-                }
-                if (doubledError < deltaX)
-                {
-                    error += deltaX;
-                    currentY += stepY;
-                }
-                ++stepIndex;
-            }
+            return x >= 0 && x < width && y >= 0 && y < height;
         };
 
-        drawLine(pts[0], pts[1]);
-        drawLine(pts[1], pts[2]);
-        drawLine(pts[2], pts[0]);
+        if (!isInside(currentX, currentY) && !isInside(endX, endY))
+            return;
+
+        if (!isInside(currentX, currentY))
+        {
+            std::swap(currentX, endX);
+            std::swap(currentY, endY);
+            std::swap(start, end);
+        }
+
+        const int32_t deltaX = std::abs(endX - currentX);
+        const int32_t deltaY = std::abs(endY - currentY);
+        const int32_t stepX = (currentX < endX) ? 1 : -1;
+        const int32_t stepY = (currentY < endY) ? 1 : -1;
+        int32_t error = deltaX - deltaY;
+
+        const int32_t totalSteps = std::max(deltaX, deltaY);
+        int32_t stepIndex = 0;
+
+        while (true)
+        {
+            if (isInside(currentX, currentY))
+            {
+                const float t = (totalSteps == 0) ? 0.f
+                                                  : static_cast<float>(stepIndex) / totalSteps;
+                const float depth = start.z + (end.z - start.z) * t;
+
+                const uint32_t pixelIndex = static_cast<uint32_t>(width) * currentY + currentX;
+                if ((depthBuffer == nullptr) || (depth < depthBuffer[pixelIndex]))
+                {
+                    if (depthBuffer != nullptr)
+                        depthBuffer[pixelIndex] = depth;
+                    image[pixelIndex * 3] = static_cast<uint8_t>(std::min(material.color.x * shade, 255.f));
+                    image[pixelIndex * 3 + 1] = static_cast<uint8_t>(std::min(material.color.y * shade, 255.f));
+                    image[pixelIndex * 3 + 2] = static_cast<uint8_t>(std::min(material.color.z * shade, 255.f));
+                }
+            }
+
+            if (currentX == endX && currentY == endY)
+                break;
+
+            const int32_t doubledError = 2 * error;
+            if (doubledError > -deltaY)
+            {
+                error -= deltaY;
+                currentX += stepX;
+            }
+            if (doubledError < deltaX)
+            {
+                error += deltaX;
+                currentY += stepY;
+            }
+            ++stepIndex;
+        }
+    }
+
+    static void drawTriangleWireframe(std::vector<uint8_t> &image, clm::vec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
+    {
+        drawLine(pts[0], pts[1], image.data(), depthBuffer.data(), imageSize, material, shade);
+        drawLine(pts[1], pts[2], image.data(), depthBuffer.data(), imageSize, material, shade);
+        drawLine(pts[2], pts[0], image.data(), depthBuffer.data(), imageSize, material, shade);
     }
 
     const std::vector<uint8_t> Renderer::getImageRasterized()
@@ -232,31 +246,50 @@ namespace CL
             drawArrow(gizmoArrowZModelMat, gizmoArrowZMaterial);
         }
 
+        return image;
+    }
+
+    void Renderer::debugRay(clm::vec3 origin, clm::vec3 dir, std::vector<uint8_t> &image)
+    {
+        const clm::vec4 originClip = projectionMat * viewMat * clm::vec4(origin, 1.f);
+        const clm::vec3 originNdc(originClip.x / originClip.w, originClip.y / originClip.w, originClip.z / originClip.w);
+        const clm::vec2 originScreen(clm::signedToUnitRange(originNdc.x) * windowSize.x, clm::signedToUnitRange(originNdc.y) * windowSize.y);
+
+        uint32_t hitModel = INVALID_INDEX;
+        clm::vec3 intersectionPoint;
+        castRay(models, origin, dir, &hitModel, nullptr, nullptr, &intersectionPoint);
+
+        if (hitModel == INVALID_INDEX)
+            intersectionPoint = origin + dir * 10.f;
+
+        const clm::vec4 destClip = projectionMat * viewMat * clm::vec4(intersectionPoint, 1.f);
+        const clm::vec3 destNdc(destClip.x / destClip.w, destClip.y / destClip.w, destClip.z / destClip.w);
+        const clm::vec2 destScreen(clm::signedToUnitRange(destNdc.x) * windowSize.x, clm::signedToUnitRange(destNdc.y) * windowSize.y);
+
+        auto drawMarker = [&](clm::vec2 screen, float w, clm::vec3 color)
         {
-            const clm::vec4 originClip = projectionMat * viewMat * clm::vec4(0.f, 0.f, 0.f, 1.f);
-            const clm::vec3 ndc = {originClip.x / originClip.w, originClip.y / originClip.w, originClip.z / originClip.w};
-            const float screenX = clm::signedToUnitRange(ndc.x) * windowSize.x;
-            const float screenY = clm::signedToUnitRange(ndc.y) * windowSize.y;
-
             static constexpr float markerSize = 10.f;
-
-            if (originClip.w > 0.f)
+            if (w > 0.f)
             {
-                if (screenX >= markerSize && screenX < windowSize.x - markerSize && screenY >= markerSize && screenY < windowSize.y - markerSize)
+                if (screen.x >= markerSize && screen.x < windowSize.x - markerSize && screen.y >= markerSize && screen.y < windowSize.y - markerSize)
                 {
-                    for (uint32_t i = screenX - markerSize; i < screenX + markerSize; i++)
+                    for (uint32_t i = screen.x - markerSize; i < screen.x + markerSize; i++)
                     {
-                        for (uint32_t j = screenY - markerSize; j < screenY + markerSize; j++)
+                        for (uint32_t j = screen.y - markerSize; j < screen.y + markerSize; j++)
                         {
-                            image[j * windowSize.x * 3 + i * 3] = 255.f;
-                            image[j * windowSize.x * 3 + i * 3 + 1] = 0.f;
-                            image[j * windowSize.x * 3 + i * 3 + 2] = 0.f;
+                            image[j * windowSize.x * 3 + i * 3] = color.x;
+                            image[j * windowSize.x * 3 + i * 3 + 1] = color.y;
+                            image[j * windowSize.x * 3 + i * 3 + 2] = color.z;
                         }
                     }
                 }
             }
-        }
+        };
 
-        return image;
+        if (originClip.w > 0.f && destClip.w > 0.f)
+            drawLine({originScreen.x, originScreen.y, 1.f}, {destScreen.x, destScreen.y, 1.f}, image.data(), nullptr, windowSize, Material({255.f, 255.f, 0.f}), 1.f);
+
+        drawMarker(originScreen, originClip.w, {255.f, 0.f, 0.f});
+        drawMarker(destScreen, destClip.w, (hitModel == INVALID_INDEX ? clm::vec3(255.f, 255.f, 0.f) : clm::vec3(0.f, 255.f, 0.f)));
     }
 }
