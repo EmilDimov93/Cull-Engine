@@ -205,6 +205,27 @@ namespace clm
         return scaleMat(uniformScale, uniformScale, uniformScale);
     }
 
+    [[nodiscard]] constexpr inline mat4 perspectiveProjectionMat(float fieldOfView, float aspectRatio, float zNear, float zFar)
+    {
+        mat4 m;
+
+        float f = 1.0f / std::tan(fieldOfView / 2.f);
+        
+        m[0][0] = f / aspectRatio;
+
+        m[1][1] = f;
+
+        m[2][2] = (zFar + zNear) / (zNear - zFar);
+
+        m[3][2] = (2.f * zFar * zNear) / (zNear - zFar);
+
+        m[2][3] = -1.f;
+
+        m[3][3] = 0.f;
+
+        return m;
+    }
+
     inline float constexpr unitToSignedRange(float unitValue)
     {
         return unitValue * 2.f - 1.f;
