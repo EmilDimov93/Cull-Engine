@@ -169,81 +169,81 @@ namespace clm
                         mat[0][2] * v.x + mat[1][2] * v.y + mat[2][2] * v.z + mat[3][2] * v.w,
                         mat[0][3] * v.x + mat[1][3] * v.y + mat[2][3] * v.z + mat[3][3] * v.w);
         }
+
+        [[nodiscard]] static constexpr inline mat4 translation(float x, float y, float z)
+        {
+            mat4 m;
+
+            m[3][0] = x;
+            m[3][1] = y;
+            m[3][2] = z;
+
+            return m;
+        }
+
+        [[nodiscard]] static constexpr inline mat4 translation(vec3 t)
+        {
+            return translation(t.x, t.y, t.z);
+        }
+
+        [[nodiscard]] static constexpr inline mat4 rotation(float x, float y, float z)
+        {
+            mat4 m;
+
+            float cosX = std::cos(x);
+            float sinX = std::sin(x);
+            float cosY = std::cos(y);
+            float sinY = std::sin(y);
+            float cosZ = std::cos(z);
+            float sinZ = std::sin(z);
+
+            m[0][0] = cosY * cosZ + sinY * sinX * sinZ;
+            m[1][0] = -cosY * sinZ + sinY * sinX * cosZ;
+            m[2][0] = sinY * cosX;
+
+            m[0][1] = cosX * sinZ;
+            m[1][1] = cosX * cosZ;
+            m[2][1] = -sinX;
+
+            m[0][2] = -sinY * cosZ + cosY * sinX * sinZ;
+            m[1][2] = sinY * sinZ + cosY * sinX * cosZ;
+            m[2][2] = cosY * cosX;
+
+            return m;
+        }
+
+        [[nodiscard]] static constexpr inline mat4 scale(float x, float y, float z)
+        {
+            mat4 m;
+
+            m[0][0] = x;
+            m[1][1] = y;
+            m[2][2] = z;
+
+            return m;
+        }
+
+        [[nodiscard]] static constexpr inline mat4 scale(float uniformScale)
+        {
+            return scale(uniformScale, uniformScale, uniformScale);
+        }
+
+        [[nodiscard]] static constexpr inline mat4 perspective(float fieldOfView, float aspectRatio, float zNear, float zFar)
+        {
+            mat4 m;
+
+            const float f = 1.0f / std::tan(fieldOfView / 2.f);
+
+            m[0][0] = f / aspectRatio;
+            m[1][1] = f;
+            m[2][2] = (zFar + zNear) / (zNear - zFar);
+            m[3][2] = (2.f * zFar * zNear) / (zNear - zFar);
+            m[2][3] = 1.f;
+            m[3][3] = 0.f;
+
+            return m;
+        }
     };
-
-    [[nodiscard]] constexpr inline mat4 translationMat(float x, float y, float z)
-    {
-        mat4 m;
-
-        m[3][0] = x;
-        m[3][1] = y;
-        m[3][2] = z;
-
-        return m;
-    }
-
-    [[nodiscard]] constexpr inline mat4 translationMat(vec3 translation)
-    {
-        return translationMat(translation.x, translation.y, translation.z);
-    }
-
-    [[nodiscard]] constexpr inline mat4 rotationMat(float x, float y, float z)
-    {
-        mat4 m;
-
-        float cosX = std::cos(x);
-        float sinX = std::sin(x);
-        float cosY = std::cos(y);
-        float sinY = std::sin(y);
-        float cosZ = std::cos(z);
-        float sinZ = std::sin(z);
-
-        m[0][0] = cosY * cosZ + sinY * sinX * sinZ;
-        m[1][0] = -cosY * sinZ + sinY * sinX * cosZ;
-        m[2][0] = sinY * cosX;
-
-        m[0][1] = cosX * sinZ;
-        m[1][1] = cosX * cosZ;
-        m[2][1] = -sinX;
-
-        m[0][2] = -sinY * cosZ + cosY * sinX * sinZ;
-        m[1][2] = sinY * sinZ + cosY * sinX * cosZ;
-        m[2][2] = cosY * cosX;
-
-        return m;
-    }
-
-    [[nodiscard]] constexpr inline mat4 scaleMat(float x, float y, float z)
-    {
-        mat4 m;
-
-        m[0][0] = x;
-        m[1][1] = y;
-        m[2][2] = z;
-
-        return m;
-    }
-
-    [[nodiscard]] constexpr inline mat4 scaleMat(float uniformScale)
-    {
-        return scaleMat(uniformScale, uniformScale, uniformScale);
-    }
-
-    [[nodiscard]] constexpr inline mat4 perspectiveProjectionMat(float fieldOfView, float aspectRatio, float zNear, float zFar)
-    {
-        mat4 m;
-
-        const float f = 1.0f / std::tan(fieldOfView / 2.f);
-
-        m[0][0] = f / aspectRatio;
-        m[1][1] = f;
-        m[2][2] = (zFar + zNear) / (zNear - zFar);
-        m[3][2] = (2.f * zFar * zNear) / (zNear - zFar);
-        m[2][3] = 1.f;
-        m[3][3] = 0.f;
-
-        return m;
-    }
 
     inline float constexpr unitToSignedRange(float unitValue)
     {

@@ -1,20 +1,6 @@
 // Copyright 2026 Emil Dimov
 // Licensed under the Apache License, Version 2.0
 
-/*
-
-Two pipelines
-1. Runs live in window, uses rasterization
-2. Produces result in .ppm format, uses ray-tracing
-
-Move camera: W, A, S, D
-Rotate camera: Arrow keys
-Render image to .ppm: R
-Select model: left mouse button
-Delete model: select it then press Delete
-
-*/
-
 #pragma once
 
 #include "../math/clm.hpp"
@@ -74,9 +60,9 @@ namespace CL
 
             clm::mat4 mat() const
             {
-                return clm::translationMat(pos.x, pos.y, pos.z)
+                return clm::mat4::translation(pos.x, pos.y, pos.z)
                 * rot.mat()
-                * clm::scaleMat(scale.x, scale.y, scale.z);
+                * clm::mat4::scale(scale.x, scale.y, scale.z);
             };
 
             Transform(clm::vec3 pos = {}, clm::vec3 rot = {}, clm::vec3 scale = {1.f, 1.f, 1.f}) : pos(pos), rot(rot), scale(scale) {}

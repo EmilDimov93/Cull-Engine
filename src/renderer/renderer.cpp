@@ -13,7 +13,7 @@ namespace CL
     {
         this->windowSize = windowSize;
         aspectRatio = static_cast<float>(windowSize.x) / windowSize.y;
-        projectionMat = clm::perspectiveProjectionMat(FOV, aspectRatio, 0.001f, 1000.f);
+        projectionMat = clm::mat4::perspective(FOV, aspectRatio, 0.001f, 1000.f);
 
         if (!glfwInit())
             exit(1);
@@ -31,7 +31,7 @@ namespace CL
             Renderer *r = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
             r->windowSize = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
             r->aspectRatio = static_cast<float>(r->windowSize.x) / r->windowSize.y;
-            r->projectionMat = clm::perspectiveProjectionMat(FOV, r->aspectRatio, 0.001f, 1000.f); });
+            r->projectionMat = clm::mat4::perspective(FOV, r->aspectRatio, 0.001f, 1000.f); });
 
         gizmoArrow = loadOBJ("assets/gizmo_arrow.obj");
     }
@@ -199,7 +199,7 @@ namespace CL
 
         cameraPos += delta;
 
-        viewMat = clm::rotationMat(-cameraRot.x, 0.f, 0.f) * clm::rotationMat(0.f, -cameraRot.y, 0.f) * clm::translationMat(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+        viewMat = clm::mat4::rotation(-cameraRot.x, 0.f, 0.f) * clm::mat4::rotation(0.f, -cameraRot.y, 0.f) * clm::mat4::translation(-cameraPos.x, -cameraPos.y, -cameraPos.z);
     }
 
     uint32_t Renderer::findHoveredModel(clm::ivec2 mousePos)
