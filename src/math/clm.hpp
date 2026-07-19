@@ -4,10 +4,25 @@
 #pragma once
 
 #include <cmath>
+#include <cstdint>
 
 namespace clm
 {
     static constexpr float PI = 3.14159265f;
+
+    struct ivec2
+    {
+        int32_t x, y;
+
+        constexpr ivec2(int32_t x = 0, int32_t y = 0) : x(x), y(y) {}
+    };
+
+    struct uvec2
+    {
+        uint32_t x, y;
+
+        constexpr uvec2(uint32_t x = 0u, uint32_t y = 0u) : x(x), y(y) {}
+    };
 
     struct vec2
     {

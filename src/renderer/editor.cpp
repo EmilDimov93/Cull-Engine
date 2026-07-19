@@ -5,7 +5,7 @@
 
 namespace CL
 {
-    static void drawTriangleSolid(std::vector<uint8_t> &image, clm::vec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
+    static void drawTriangleSolid(std::vector<uint8_t> &image, clm::uvec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
     {
         const int32_t minX = std::max(0.f, std::min({pts[0].x, pts[1].x, pts[2].x}));
         const int32_t maxX = std::min(imageSize.x - 1.f, std::max({pts[0].x, pts[1].x, pts[2].x}));
@@ -39,7 +39,7 @@ namespace CL
                     const float b2 = static_cast<float>(w2) / area;
                     const float depth = b0 * pts[0].z + b1 * pts[1].z + b2 * pts[2].z;
 
-                    const uint32_t pixelIndex = static_cast<uint32_t>(imageSize.x) * y + x;
+                    const uint32_t pixelIndex = imageSize.x * y + x;
                     if (depth < depthBuffer[pixelIndex])
                     {
                         depthBuffer[pixelIndex] = depth;
@@ -52,11 +52,8 @@ namespace CL
         }
     }
 
-    void drawLine(clm::vec3 start, clm::vec3 end, uint8_t *image, float *depthBuffer, const clm::vec2 &imageSize, const Material &material, float shade)
+    void drawLine(clm::vec3 start, clm::vec3 end, uint8_t *image, float *depthBuffer, const clm::uvec2 &imageSize, const Material &material, float shade)
     {
-        const int32_t width = static_cast<int32_t>(imageSize.x);
-        const int32_t height = static_cast<int32_t>(imageSize.y);
-
         int32_t currentX = static_cast<int32_t>(std::floor(start.x));
         int32_t currentY = static_cast<int32_t>(std::floor(start.y));
         int32_t endX = static_cast<int32_t>(std::floor(end.x));
@@ -64,7 +61,7 @@ namespace CL
 
         const auto isInside = [&](int32_t x, int32_t y)
         {
-            return x >= 0 && x < width && y >= 0 && y < height;
+            return x >= 0 && x < imageSize.x && y >= 0 && y < imageSize.y;
         };
 
         if (!isInside(currentX, currentY) && !isInside(endX, endY))
@@ -94,7 +91,7 @@ namespace CL
                                                   : static_cast<float>(stepIndex) / totalSteps;
                 const float depth = start.z + (end.z - start.z) * t;
 
-                const uint32_t pixelIndex = static_cast<uint32_t>(width) * currentY + currentX;
+                const uint32_t pixelIndex = imageSize.x * currentY + currentX;
                 if ((depthBuffer == nullptr) || (depth < depthBuffer[pixelIndex]))
                 {
                     if (depthBuffer != nullptr)
@@ -123,7 +120,7 @@ namespace CL
         }
     }
 
-    static void drawTriangleWireframe(std::vector<uint8_t> &image, clm::vec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
+    static void drawTriangleWireframe(std::vector<uint8_t> &image, clm::uvec2 imageSize, std::array<clm::vec3, 3> pts, std::vector<float> &depthBuffer, Material material, float shade)
     {
         drawLine(pts[0], pts[1], image.data(), depthBuffer.data(), imageSize, material, shade);
         drawLine(pts[1], pts[2], image.data(), depthBuffer.data(), imageSize, material, shade);
@@ -134,10 +131,10 @@ namespace CL
     {
         const float nearPlane = 0.001f;
 
-        std::vector<uint8_t> image(static_cast<uint32_t>(windowSize.x) * static_cast<uint32_t>(windowSize.y) * 3);
-        std::vector<float> depthBuffer(static_cast<uint32_t>(windowSize.x) * static_cast<uint32_t>(windowSize.y), std::numeric_limits<float>::infinity());
+        std::vector<uint8_t> image(windowSize.x * windowSize.y * 3);
+        std::vector<float> depthBuffer(windowSize.x * windowSize.y, std::numeric_limits<float>::infinity());
 
-        for (uint32_t i = 0; i < static_cast<uint32_t>(windowSize.x) * static_cast<uint32_t>(windowSize.y) * 3; i += 3)
+        for (uint32_t i = 0; i < windowSize.x * windowSize.y * 3; i += 3)
         {
             image[i] = static_cast<uint8_t>(clearColor.x);
             image[i + 1] = static_cast<uint8_t>(clearColor.y);
@@ -201,7 +198,7 @@ namespace CL
             const clm::mat4 gizmoArrowYModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
             const clm::mat4 gizmoArrowZModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
 
-            std::vector<float> arrowDepthBuffer(static_cast<uint32_t>(windowSize.x) * static_cast<uint32_t>(windowSize.y), std::numeric_limits<float>::infinity());
+            std::vector<float> arrowDepthBuffer(windowSize.x * windowSize.y, std::numeric_limits<float>::infinity());
             auto drawArrow = [&](clm::mat4 modelMat, Material material)
             {
                 for (const Mesh &mesh : gizmoArrow.meshes)
@@ -253,7 +250,7 @@ namespace CL
     {
         const clm::vec4 originClip = projectionMat * viewMat * clm::vec4(origin, 1.f);
         const clm::vec3 originNdc(originClip.x / originClip.w, originClip.y / originClip.w, originClip.z / originClip.w);
-        const clm::vec2 originScreen(clm::signedToUnitRange(originNdc.x) * windowSize.x, clm::signedToUnitRange(originNdc.y) * windowSize.y);
+        const clm::ivec2 originScreen(static_cast<int32_t>(clm::signedToUnitRange(originNdc.x) * windowSize.x), static_cast<int32_t>(clm::signedToUnitRange(originNdc.y) * windowSize.y));
 
         uint32_t hitModel = INVALID_INDEX;
         clm::vec3 intersectionPoint;
@@ -264,11 +261,11 @@ namespace CL
 
         const clm::vec4 destClip = projectionMat * viewMat * clm::vec4(intersectionPoint, 1.f);
         const clm::vec3 destNdc(destClip.x / destClip.w, destClip.y / destClip.w, destClip.z / destClip.w);
-        const clm::vec2 destScreen(clm::signedToUnitRange(destNdc.x) * windowSize.x, clm::signedToUnitRange(destNdc.y) * windowSize.y);
+        const clm::ivec2 destScreen(static_cast<int32_t>(clm::signedToUnitRange(destNdc.x) * windowSize.x), static_cast<int32_t>(clm::signedToUnitRange(destNdc.y) * windowSize.y));
 
-        auto drawMarker = [&](clm::vec2 screen, float w, clm::vec3 color)
+        auto drawMarker = [&](clm::ivec2 screen, float w, clm::vec3 color)
         {
-            static constexpr float markerSize = 10.f;
+            static constexpr uint32_t markerSize = 10;
             if (w > 0.f)
             {
                 if (screen.x >= markerSize && screen.x < windowSize.x - markerSize && screen.y >= markerSize && screen.y < windowSize.y - markerSize)
@@ -287,7 +284,7 @@ namespace CL
         };
 
         if (originClip.w > 0.f && destClip.w > 0.f)
-            drawLine({originScreen.x, originScreen.y, 1.f}, {destScreen.x, destScreen.y, 1.f}, image.data(), nullptr, windowSize, Material({255.f, 255.f, 0.f}), 1.f);
+            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, image.data(), nullptr, windowSize, Material({255.f, 255.f, 0.f}), 1.f);
 
         drawMarker(originScreen, originClip.w, {255.f, 0.f, 0.f});
         drawMarker(destScreen, destClip.w, (hitModel == INVALID_INDEX ? clm::vec3(255.f, 255.f, 0.f) : clm::vec3(0.f, 255.f, 0.f)));

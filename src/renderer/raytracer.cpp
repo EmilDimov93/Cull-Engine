@@ -95,9 +95,9 @@ namespace CL
         }
     }
 
-    const std::vector<uint8_t> Renderer::getImageRayTraced(clm::vec2 imageSize)
+    const std::vector<uint8_t> Renderer::getImageRayTraced(clm::uvec2 imageSize)
     {
-        std::vector<uint8_t> image(static_cast<uint32_t>(imageSize.x) * static_cast<uint32_t>(imageSize.y) * 3);
+        std::vector<uint8_t> image(imageSize.x * imageSize.y * 3);
 
         const unsigned int threadCount = std::max(1u, std::thread::hardware_concurrency());
         std::vector<std::thread> workers;
@@ -113,7 +113,7 @@ namespace CL
             {
                 for (uint32_t pixelX = 0; pixelX < imageSize.x; pixelX++)
                 {
-                    const float aspectRatio = imageSize.x / imageSize.y;
+                    const float aspectRatio = static_cast<float>(imageSize.x) / imageSize.y;
                     const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / imageSize.x) * aspectRatio * TAN_HALF_FOV;
                     const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / imageSize.y) * TAN_HALF_FOV;
 
@@ -125,7 +125,7 @@ namespace CL
                     const float biggestDot = clm::vec3(clm::unitToSignedRange((imageSize.x / 2.f + 0.5f) / imageSize.x) * aspectRatio * TAN_HALF_FOV, -clm::unitToSignedRange((imageSize.y / 2.f + 0.5f) / imageSize.y) * TAN_HALF_FOV, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
                     const float vignette = (rayDirection.dot(forward) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
 
-                    const uint32_t pixelIndex = (static_cast<uint32_t>(pixelY) * imageSize.x + pixelX) * 3;
+                    const uint32_t pixelIndex = (pixelY * imageSize.x + pixelX) * 3;
 
                     uint32_t hitModelIndex = INVALID_INDEX;
                     uint32_t hitMeshIndex = INVALID_INDEX;

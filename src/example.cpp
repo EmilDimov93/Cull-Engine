@@ -7,7 +7,7 @@ using namespace CL;
 
 int main()
 {
-    Renderer renderer({1000.f, 1000.f}, {144.f, 213.f, 255.f});
+    Renderer renderer({1000, 1000}, {144.f, 213.f, 255.f});
 
     Model car = renderer.loadOBJ("build/vw/vw.obj");
     car.transform.pos = {1.7f, -1.f, 8.8f};

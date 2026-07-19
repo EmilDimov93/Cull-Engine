@@ -89,7 +89,7 @@ namespace CL
     class Renderer
     {
     public:
-        Renderer(clm::vec2 windowSize = {500.f, 500.f}, clm::vec3 clearColor = {0.f, 0.f, 0.f});
+        Renderer(clm::uvec2 windowSize = {500, 500}, clm::vec3 clearColor = {0.f, 0.f, 0.f});
         ~Renderer();
 
         void addModel(Model &model);
@@ -104,7 +104,7 @@ namespace CL
         }
 
         void runEditor();
-        void renderToPPM(clm::vec2 imageSize);
+        void renderToPPM(clm::uvec2 imageSize);
 
     private:
         static constexpr uint32_t INVALID_INDEX = std::numeric_limits<uint32_t>::max();
@@ -141,7 +141,7 @@ namespace CL
 
         std::vector<Model> models;
 
-        clm::vec2 prevMousePos;
+        clm::ivec2 prevMousePos;
 
         clm::vec3 clearColor;
 
@@ -158,16 +158,16 @@ namespace CL
         float vignetteStrength = 0.f;
 
         GLFWwindow *window;
-        clm::vec2 windowSize;
+        clm::uvec2 windowSize;
         float aspectRatio;
         clm::mat4 projectionMat;
 
         [[nodiscard]] const std::vector<uint8_t> getImageRasterized();
-        [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(clm::vec2 imageSize);
+        [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(clm::uvec2 imageSize);
 
         void updateCamera();
 
-        uint32_t findHoveredModel(uint32_t mouseX, uint32_t mouseY);
+        uint32_t findHoveredModel(clm::ivec2 mousePos);
 
         static void castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
         void debugRay(clm::vec3 origin, clm::vec3 dir, std::vector<uint8_t> &image);

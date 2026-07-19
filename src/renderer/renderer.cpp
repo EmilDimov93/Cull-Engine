@@ -9,10 +9,10 @@
 
 namespace CL
 {
-    Renderer::Renderer(clm::vec2 windowSize, clm::vec3 clearColor) : clearColor(clearColor)
+    Renderer::Renderer(clm::uvec2 windowSize, clm::vec3 clearColor) : clearColor(clearColor)
     {
         this->windowSize = windowSize;
-        aspectRatio = windowSize.x / windowSize.y;
+        aspectRatio = static_cast<float>(windowSize.x) / windowSize.y;
         projectionMat = clm::perspectiveProjectionMat(FOV, aspectRatio, 0.001f, 1000.f);
 
         if (!glfwInit())
@@ -29,8 +29,8 @@ namespace CL
         glfwSetFramebufferSizeCallback(window, [](GLFWwindow *window, int width, int height)
                                        {
             Renderer *r = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
-            r->windowSize = {static_cast<float>(width), static_cast<float>(height)};
-            r->aspectRatio = r->windowSize.x / r->windowSize.y;
+            r->windowSize = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+            r->aspectRatio = static_cast<float>(r->windowSize.x) / r->windowSize.y;
             r->projectionMat = clm::perspectiveProjectionMat(FOV, r->aspectRatio, 0.001f, 1000.f); });
 
         gizmoArrow = loadOBJ("assets/gizmo_arrow.obj");
@@ -85,7 +85,7 @@ namespace CL
                 switch (gizmoDrag)
                 {
                 case GIZMO_DRAG_NONE:
-                    selectedModelIndex = findHoveredModel(mouseX, mouseY);
+                    selectedModelIndex = findHoveredModel(clm::ivec2(static_cast<int32_t>(mouseX), static_cast<int32_t>(mouseY)));
                     break;
                 case GIZMO_DRAG_X_ARROW:
                     switch (gizmoMode)
@@ -136,7 +136,7 @@ namespace CL
                 gizmoDrag = GIZMO_DRAG_NONE;
             }
 
-            prevMousePos = {static_cast<float>(mouseX), static_cast<float>(mouseY)};
+            prevMousePos = {static_cast<int32_t>(mouseX), static_cast<int32_t>(mouseY)};
 
             if ((glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS))
                 editorViewMode = EDITOR_VIEW_SOLID;
@@ -150,21 +150,21 @@ namespace CL
             }
 
             if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-                renderToPPM({100.f, 100.f});
+                renderToPPM({10, 10});
 
             dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
             std::cout << 1000.f / dt << std::endl;
         }
     }
 
-    void Renderer::renderToPPM(clm::vec2 imageSize)
+    void Renderer::renderToPPM(clm::uvec2 imageSize)
     {
         std::vector<uint8_t> image = getImageRayTraced(imageSize);
 
         std::ofstream file("build/result.ppm", std::ios::binary);
 
         file << "P6\n"
-             << static_cast<uint32_t>(imageSize.x) << ' ' << static_cast<uint32_t>(imageSize.y) << "\n255\n";
+             << imageSize.x << ' ' << imageSize.x << "\n255\n";
 
         file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(imageSize.x) * static_cast<std::streamsize>(imageSize.y) * 3);
 
@@ -202,10 +202,10 @@ namespace CL
         viewMat = clm::rotationMat(-cameraRot.x, 0.f, 0.f) * clm::rotationMat(0.f, -cameraRot.y, 0.f) * clm::translationMat(-cameraPos.x, -cameraPos.y, -cameraPos.z);
     }
 
-    uint32_t Renderer::findHoveredModel(uint32_t mouseX, uint32_t mouseY)
+    uint32_t Renderer::findHoveredModel(clm::ivec2 mousePos)
     {
-        const float ndcX = clm::unitToSignedRange((mouseX + 0.5f) / windowSize.x) * aspectRatio * TAN_HALF_FOV;
-        const float ndcY = -clm::unitToSignedRange((mouseY + 0.5f) / windowSize.y) * TAN_HALF_FOV;
+        const float ndcX = clm::unitToSignedRange((mousePos.x + 0.5f) / windowSize.x) * aspectRatio * TAN_HALF_FOV;
+        const float ndcY = -clm::unitToSignedRange((mousePos.y + 0.5f) / windowSize.y) * TAN_HALF_FOV;
 
         const clm::vec3 forward = {cosf(cameraRot.x) * sinf(cameraRot.y), -sinf(cameraRot.x), cosf(cameraRot.x) * cosf(cameraRot.y)};
         const clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
