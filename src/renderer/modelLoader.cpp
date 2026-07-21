@@ -14,11 +14,11 @@ namespace CL
     {
         std::string ext = std::filesystem::path(filePath).extension().string();
         if(ext != ".obj")
-            exit(1);
+            throw std::runtime_error("File is not in .obj format: " + filePath);
 
         std::ifstream file(filePath);
         if (!file.is_open())
-            exit(1);
+            throw std::runtime_error("File not found: " + filePath);
 
         std::vector<clm::vec3> positions;
         std::unordered_map<std::string, Material> materials;

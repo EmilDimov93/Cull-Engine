@@ -16,11 +16,11 @@ namespace CL
         projectionMat = clm::mat4::perspective(FOV, aspectRatio, 0.001f, 1000.f);
 
         if (!glfwInit())
-            exit(1);
+            throw std::runtime_error("Failed to initialize GLFW");
 
         window = glfwCreateWindow(static_cast<int>(windowSize.x), static_cast<int>(windowSize.y), "Cull Engine - Editor", nullptr, nullptr);
         if (!window)
-            exit(1);
+            throw std::runtime_error("Failed to create GLFW window");
 
         glfwMakeContextCurrent(window);
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -52,8 +52,6 @@ namespace CL
             const auto startTime = std::chrono::steady_clock::now();
 
             glfwPollEvents();
-
-            glfwSetWindowTitle(window, ("Cull Engine - Editor | " + std::to_string(int(1000.f/dt)) + " FPS").c_str());
 
             updateCamera();
 
@@ -155,6 +153,7 @@ namespace CL
                 renderToPPM(resultImageSize);
 
             dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
+            glfwSetWindowTitle(window, ("Cull Engine - Editor | " + std::to_string(int(1000.f/dt)) + " FPS").c_str());
         }
     }
 
@@ -165,7 +164,7 @@ namespace CL
         std::ofstream file("build/result.ppm", std::ios::binary);
 
         if (!file)
-            exit(1);
+            throw std::runtime_error("Failed to open build/result.ppm");
 
         file << "P6\n"
              << imageSize.x << ' ' << imageSize.x << "\n255\n";
