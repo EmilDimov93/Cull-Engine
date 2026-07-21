@@ -89,6 +89,8 @@ namespace CL
             surfaceToSunDir = surfaceToSunDir * -1;
         }
 
+        void setResultImageSize(clm::uvec2 size) { resultImageSize = size; }
+
         void runEditor();
         void renderToPPM(clm::uvec2 imageSize);
 
@@ -139,7 +141,7 @@ namespace CL
 
         uint32_t selectedModelIndex = INVALID_INDEX;
 
-        float dt;
+        float dt = 0.f;
 
         float vignetteStrength = 0.f;
 
@@ -147,6 +149,8 @@ namespace CL
         clm::uvec2 windowSize;
         float aspectRatio;
         clm::mat4 projectionMat;
+
+        clm::uvec2 resultImageSize = {100u, 100u};
 
         [[nodiscard]] const std::vector<uint8_t> getImageRasterized();
         [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(clm::uvec2 imageSize);

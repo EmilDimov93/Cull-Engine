@@ -86,7 +86,7 @@ namespace CL
                                 *outNormal = edge1.cross(edge2).normalized();
                             }
 
-                            if(outIntersectionPoint)
+                            if (outIntersectionPoint)
                                 *outIntersectionPoint = intersectionPoint;
                         }
                     }
@@ -107,13 +107,16 @@ namespace CL
         const clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
         const clm::vec3 up = {sinf(cameraRot.x) * sinf(cameraRot.y), cosf(cameraRot.x), sinf(cameraRot.x) * cosf(cameraRot.y)};
 
+        const float aspectRatio = static_cast<float>(imageSize.x) / imageSize.y;
+        const float smallestDot = clm::vec3(clm::unitToSignedRange(0.5f / imageSize.x) * aspectRatio * TAN_HALF_FOV, -clm::unitToSignedRange(0.5f / imageSize.y) * TAN_HALF_FOV, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
+        const float biggestDot = clm::vec3(clm::unitToSignedRange((imageSize.x / 2.f + 0.5f) / imageSize.x) * aspectRatio * TAN_HALF_FOV, -clm::unitToSignedRange((imageSize.y / 2.f + 0.5f) / imageSize.y) * TAN_HALF_FOV, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
+
         auto renderRows = [&](unsigned int threadIndex)
         {
             for (uint32_t pixelY = threadIndex; pixelY < imageSize.y; pixelY += threadCount)
             {
                 for (uint32_t pixelX = 0; pixelX < imageSize.x; pixelX++)
                 {
-                    const float aspectRatio = static_cast<float>(imageSize.x) / imageSize.y;
                     const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / imageSize.x) * aspectRatio * TAN_HALF_FOV;
                     const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / imageSize.y) * TAN_HALF_FOV;
 
@@ -121,8 +124,6 @@ namespace CL
 
                     clm::vec4 pixelColor = {clearColor.x, clearColor.y, clearColor.z, 1.f};
 
-                    const float smallestDot = clm::vec3(clm::unitToSignedRange(0.5f / imageSize.x) * aspectRatio * TAN_HALF_FOV, -clm::unitToSignedRange(0.5f / imageSize.y) * TAN_HALF_FOV, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
-                    const float biggestDot = clm::vec3(clm::unitToSignedRange((imageSize.x / 2.f + 0.5f) / imageSize.x) * aspectRatio * TAN_HALF_FOV, -clm::unitToSignedRange((imageSize.y / 2.f + 0.5f) / imageSize.y) * TAN_HALF_FOV, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
                     const float vignette = (rayDirection.dot(forward) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
 
                     const uint32_t pixelIndex = (pixelY * imageSize.x + pixelX) * 3;
@@ -139,7 +140,7 @@ namespace CL
 
                         uint32_t shadowHitModelIndex = INVALID_INDEX;
                         castRay(models, intersectionPoint, surfaceToSunDir, &shadowHitModelIndex, nullptr, nullptr, nullptr);
-                        if(shadowHitModelIndex != INVALID_INDEX)
+                        if (shadowHitModelIndex != INVALID_INDEX)
                         {
                             pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 0.5f).color;
                         }

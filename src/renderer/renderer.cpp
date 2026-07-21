@@ -53,6 +53,8 @@ namespace CL
 
             glfwPollEvents();
 
+            glfwSetWindowTitle(window, ("Cull Engine - Editor | " + std::to_string(int(1000.f/dt)) + " FPS").c_str());
+
             updateCamera();
 
             std::vector<uint8_t> image = getImageRasterized();
@@ -150,10 +152,9 @@ namespace CL
             }
 
             if (glfwGetKey(window, GLFW_KEY_R) == GLFW_PRESS)
-                renderToPPM({10, 10});
+                renderToPPM(resultImageSize);
 
             dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
-            std::cout << 1000.f / dt << std::endl;
         }
     }
 
@@ -162,6 +163,9 @@ namespace CL
         std::vector<uint8_t> image = getImageRayTraced(imageSize);
 
         std::ofstream file("build/result.ppm", std::ios::binary);
+
+        if (!file)
+            exit(1);
 
         file << "P6\n"
              << imageSize.x << ' ' << imageSize.x << "\n255\n";
