@@ -13,7 +13,11 @@ namespace CL
     {
         this->windowSize = windowSize;
         aspectRatio = static_cast<float>(windowSize.x) / windowSize.y;
-        projectionMat = clm::mat4::perspective(FOV, aspectRatio, 0.001f, 1000.f);
+        projectionMat = clm::mat4::perspective(FOV, aspectRatio, ZNEAR, ZFAR);
+
+        colorAttachmentMain.resize(windowSize.x * windowSize.y * 3, 0u);
+        depthAttachmentMain.resize(windowSize.x * windowSize.y, std::numeric_limits<float>::infinity());
+        depthAttachmentGizmo.resize(windowSize.x * windowSize.y, std::numeric_limits<float>::infinity());
 
         if (!glfwInit())
             throw std::runtime_error("Failed to initialize GLFW");
@@ -30,8 +34,12 @@ namespace CL
                                        {
             Renderer *r = reinterpret_cast<Renderer*>(glfwGetWindowUserPointer(window));
             r->windowSize = {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
-            r->aspectRatio = static_cast<float>(r->windowSize.x) / r->windowSize.y;
-            r->projectionMat = clm::mat4::perspective(FOV, r->aspectRatio, 0.001f, 1000.f); });
+            r->aspectRatio = static_cast<float>(width) / height;
+            r->projectionMat = clm::mat4::perspective(FOV, r->aspectRatio, ZNEAR, ZFAR);
+        
+            r->colorAttachmentMain.resize(width * height * 3, 0u);
+            r->depthAttachmentMain.resize(width * height, std::numeric_limits<float>::infinity());
+            r->depthAttachmentGizmo.resize(width * height, std::numeric_limits<float>::infinity()); });
 
         gizmoArrow = loadOBJ("assets/gizmo_arrow.obj");
     }
@@ -55,9 +63,9 @@ namespace CL
 
             updateCamera();
 
-            std::vector<uint8_t> image = getImageRasterized();
+            renderImageRasterized();
 
-            glDrawPixels(static_cast<GLsizei>(windowSize.x), static_cast<GLsizei>(windowSize.y), GL_RGB, GL_UNSIGNED_BYTE, image.data());
+            glDrawPixels(static_cast<GLsizei>(windowSize.x), static_cast<GLsizei>(windowSize.y), GL_RGB, GL_UNSIGNED_BYTE, colorAttachmentMain.data());
             glfwSwapBuffers(window);
 
             double mouseX, mouseY;
@@ -153,7 +161,7 @@ namespace CL
                 renderToPPM(resultImageSize);
 
             dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
-            glfwSetWindowTitle(window, ("Cull Engine - Editor | " + std::to_string(int(1000.f/dt)) + " FPS").c_str());
+            glfwSetWindowTitle(window, ("Cull Engine - Editor | " + std::to_string(int(1000.f / dt)) + " FPS").c_str());
         }
     }
 

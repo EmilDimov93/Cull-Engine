@@ -60,9 +60,7 @@ namespace CL
 
             clm::mat4 mat() const
             {
-                return clm::mat4::translation(pos.x, pos.y, pos.z)
-                * rot.mat()
-                * clm::mat4::scale(scale.x, scale.y, scale.z);
+                return clm::mat4::translation(pos.x, pos.y, pos.z) * rot.mat() * clm::mat4::scale(scale.x, scale.y, scale.z);
             };
 
             Transform(clm::vec3 pos = {}, clm::vec3 rot = {}, clm::vec3 scale = {1.f, 1.f, 1.f}) : pos(pos), rot(rot), scale(scale) {}
@@ -102,6 +100,9 @@ namespace CL
 
         static constexpr clm::vec4 SELECTED_MODEL_COLOR = clm::vec4(255.f, 255.f, 0.f, 255.f);
 
+        static constexpr float ZNEAR = 0.001f;
+        static constexpr float ZFAR = 1000.f;
+
         Model gizmoArrow;
         static constexpr Material gizmoArrowXMaterial = Material({255.f, 0.f, 0.f, 255.f});
         static constexpr Material gizmoArrowYMaterial = Material({0.f, 255.f, 0.f, 255.f});
@@ -129,6 +130,10 @@ namespace CL
 
         std::vector<Model> models;
 
+        std::vector<uint8_t> colorAttachmentMain;
+        std::vector<float> depthAttachmentMain;
+        std::vector<float> depthAttachmentGizmo;
+
         clm::ivec2 prevMousePos;
 
         clm::vec3 clearColor;
@@ -152,7 +157,7 @@ namespace CL
 
         clm::uvec2 resultImageSize = {100u, 100u};
 
-        [[nodiscard]] const std::vector<uint8_t> getImageRasterized();
+        void renderImageRasterized();
         [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(clm::uvec2 imageSize);
 
         void updateCamera();

@@ -127,18 +127,16 @@ namespace CL
         drawLine(pts[2], pts[0], image.data(), depthBuffer.data(), imageSize, material, shade);
     }
 
-    const std::vector<uint8_t> Renderer::getImageRasterized()
+    void Renderer::renderImageRasterized()
     {
-        const float nearPlane = 0.001f;
-
-        std::vector<uint8_t> image(windowSize.x * windowSize.y * 3);
-        std::vector<float> depthBuffer(windowSize.x * windowSize.y, std::numeric_limits<float>::infinity());
+        std::fill(depthAttachmentMain.begin(), depthAttachmentMain.end(), std::numeric_limits<float>::infinity());
+        std::fill(depthAttachmentGizmo.begin(), depthAttachmentGizmo.end(), std::numeric_limits<float>::infinity());
 
         for (uint32_t i = 0; i < windowSize.x * windowSize.y * 3; i += 3)
         {
-            image[i] = static_cast<uint8_t>(clearColor.x);
-            image[i + 1] = static_cast<uint8_t>(clearColor.y);
-            image[i + 2] = static_cast<uint8_t>(clearColor.z);
+            colorAttachmentMain[i] = static_cast<uint8_t>(clearColor.x);
+            colorAttachmentMain[i + 1] = static_cast<uint8_t>(clearColor.y);
+            colorAttachmentMain[i + 2] = static_cast<uint8_t>(clearColor.z);
         }
 
         for (uint32_t modelIndex = 0; modelIndex < models.size(); modelIndex++)
@@ -156,7 +154,7 @@ namespace CL
                     pointsWorld[currPoint] = modelMat * mesh.vertices[index].pos;
                     pointsView[currPoint] = viewMat * pointsWorld[currPoint];
 
-                    if (pointsView[currPoint].z < nearPlane)
+                    if (pointsView[currPoint].z < ZNEAR)
                     {
                         currPoint = 0;
                         continue;
@@ -179,9 +177,9 @@ namespace CL
                         const float shade = std::max(0.f, worldNormal.dot(surfaceToSunDir) + ambient);
 
                         if (editorViewMode == EDITOR_VIEW_WIREFRAME)
-                            drawTriangleWireframe(image, windowSize, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
+                            drawTriangleWireframe(colorAttachmentMain, windowSize, points, depthAttachmentMain, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
                         else
-                            drawTriangleSolid(image, windowSize, points, depthBuffer, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
+                            drawTriangleSolid(colorAttachmentMain, windowSize, points, depthAttachmentMain, (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material), shade);
                         currPoint = 0;
                     }
                     else
@@ -198,7 +196,6 @@ namespace CL
             const clm::mat4 gizmoArrowYModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
             const clm::mat4 gizmoArrowZModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
 
-            std::vector<float> arrowDepthBuffer(windowSize.x * windowSize.y, std::numeric_limits<float>::infinity());
             auto drawArrow = [&](clm::mat4 modelMat, Material material)
             {
                 for (const Mesh &mesh : gizmoArrow.meshes)
@@ -212,7 +209,7 @@ namespace CL
                         pointsWorld[currPoint] = modelMat * mesh.vertices[index].pos;
                         pointsView[currPoint] = viewMat * pointsWorld[currPoint];
 
-                        if (pointsView[currPoint].z < nearPlane)
+                        if (pointsView[currPoint].z < ZNEAR)
                         {
                             currPoint = 0;
                             continue;
@@ -227,7 +224,7 @@ namespace CL
 
                         if (currPoint == 2)
                         {
-                            drawTriangleSolid(image, windowSize, points, arrowDepthBuffer, material, 1.f);
+                            drawTriangleSolid(colorAttachmentMain, windowSize, points, depthAttachmentGizmo, material, 1.f);
                             currPoint = 0;
                         }
                         else
@@ -242,8 +239,6 @@ namespace CL
             drawArrow(gizmoArrowYModelMat, gizmoArrowYMaterial);
             drawArrow(gizmoArrowZModelMat, gizmoArrowZMaterial);
         }
-
-        return image;
     }
 
     void Renderer::debugRay(clm::vec3 origin, clm::vec3 dir, std::vector<uint8_t> &image)
