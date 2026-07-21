@@ -61,7 +61,7 @@ namespace CL
 
             glfwPollEvents();
 
-            updateCamera();
+            camera.update(window, dt);
 
             renderImageRasterized();
 
@@ -189,28 +189,28 @@ namespace CL
         models.push_back(std::move(model));
     }
 
-    void Renderer::updateCamera()
+    void Renderer::Camera::update(GLFWwindow *window, float dt)
     {
         const float speed = 0.001f;
 
-        cameraRot.y += ((glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)) * clm::PI * dt * speed;
+        rot.y += ((glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)) * clm::PI * dt * speed;
 
-        cameraRot.x += ((glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)) * clm::PI * dt * speed;
-        cameraRot.x = std::clamp(cameraRot.x, -clm::PI / 2, clm::PI / 2);
+        rot.x += ((glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)) * clm::PI * dt * speed;
+        rot.x = std::clamp(rot.x, -clm::PI / 2, clm::PI / 2);
 
-        const float forwardBackward = ((glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)) * dt;
-        const clm::vec3 forward = {cosf(cameraRot.x) * sinf(cameraRot.y), -sinf(cameraRot.x), cosf(cameraRot.x) * cosf(cameraRot.y)};
-        const clm::vec3 forwardScaled = forward * forwardBackward;
+        Basis basis = getBasis();
 
-        const float leftRight = ((glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)) * dt;
-        const clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
-        const clm::vec3 rightScaled = right * leftRight;
+        const float forwardScale = ((glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)) * dt * speed;
+        const clm::vec3 forwardScaled = basis.forward * forwardScale;
 
-        const clm::vec3 delta = (forwardScaled + rightScaled) * speed;
+        const float leftScale = ((glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)) * dt * speed;
+        const clm::vec3 rightScaled = basis.right * leftScale;
 
-        cameraPos += delta;
+        const clm::vec3 delta = forwardScaled + rightScaled;
 
-        viewMat = clm::mat4::rotation(-cameraRot.x, 0.f, 0.f) * clm::mat4::rotation(0.f, -cameraRot.y, 0.f) * clm::mat4::translation(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+        pos += delta;
+
+        mat = clm::mat4::rotation(-rot.x, 0.f, 0.f) * clm::mat4::rotation(0.f, -rot.y, 0.f) * clm::mat4::translation(-pos.x, -pos.y, -pos.z);
     }
 
     uint32_t Renderer::findHoveredModel(clm::ivec2 mousePos)
@@ -218,13 +218,13 @@ namespace CL
         const float ndcX = clm::unitToSignedRange((mousePos.x + 0.5f) / windowSize.x) * aspectRatio * TAN_HALF_FOV;
         const float ndcY = -clm::unitToSignedRange((mousePos.y + 0.5f) / windowSize.y) * TAN_HALF_FOV;
 
-        const clm::vec3 forward = {cosf(cameraRot.x) * sinf(cameraRot.y), -sinf(cameraRot.x), cosf(cameraRot.x) * cosf(cameraRot.y)};
-        const clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
-        const clm::vec3 up = {sinf(cameraRot.x) * sinf(cameraRot.y), cosf(cameraRot.x), sinf(cameraRot.x) * cosf(cameraRot.y)};
+        Camera::Basis basis = camera.getBasis();
 
-        const clm::vec3 rayDirection = (right * ndcX + up * ndcY + forward).normalized();
+        const clm::vec3 rayDirection = (basis.right * ndcX + basis.up * ndcY + basis.forward).normalized();
 
         uint32_t hitModelIndex = INVALID_INDEX;
+
+        clm::vec3 cameraPos = camera.getPos();
 
         if (selectedModelIndex != INVALID_INDEX)
         {

@@ -136,7 +136,7 @@ namespace CL
         for (uint32_t index : mesh.indices)
         {
             pointsWorld[currPoint] = modelMat * mesh.vertices[index].pos;
-            pointsView[currPoint] = viewMat * pointsWorld[currPoint];
+            pointsView[currPoint] = camera.viewMat() * pointsWorld[currPoint];
 
             if (pointsView[currPoint].z < ZNEAR)
             {
@@ -195,7 +195,7 @@ namespace CL
             for (const Mesh &mesh : models[modelIndex].meshes)
             {
                 const Material &material = models[modelIndex].materials[mesh.materialIndex];
-                const Material materialTinted = (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_COLOR, 0.2f) : material);
+                const Material materialTinted = (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_TINT, 0.2f) : material);
                 drawMesh(mesh, materialTinted, modelMat, depthAttachmentMain, (editorViewMode == EDITOR_VIEW_SOLID), true);
             }
         }
@@ -217,7 +217,7 @@ namespace CL
 
     void Renderer::debugRay(clm::vec3 origin, clm::vec3 dir)
     {
-        const clm::vec4 originClip = projectionMat * viewMat * clm::vec4(origin, 1.f);
+        const clm::vec4 originClip = projectionMat * camera.viewMat() * clm::vec4(origin, 1.f);
         const clm::vec3 originNdc(originClip.x / originClip.w, originClip.y / originClip.w, originClip.z / originClip.w);
         const clm::ivec2 originScreen(static_cast<int32_t>(clm::signedToUnitRange(originNdc.x) * windowSize.x), static_cast<int32_t>(clm::signedToUnitRange(originNdc.y) * windowSize.y));
 
@@ -228,7 +228,7 @@ namespace CL
         if (hitModel == INVALID_INDEX)
             intersectionPoint = origin + dir * 10.f;
 
-        const clm::vec4 destClip = projectionMat * viewMat * clm::vec4(intersectionPoint, 1.f);
+        const clm::vec4 destClip = projectionMat * camera.viewMat() * clm::vec4(intersectionPoint, 1.f);
         const clm::vec3 destNdc(destClip.x / destClip.w, destClip.y / destClip.w, destClip.z / destClip.w);
         const clm::ivec2 destScreen(static_cast<int32_t>(clm::signedToUnitRange(destNdc.x) * windowSize.x), static_cast<int32_t>(clm::signedToUnitRange(destNdc.y) * windowSize.y));
 

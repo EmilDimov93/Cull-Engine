@@ -103,9 +103,7 @@ namespace CL
         std::vector<std::thread> workers;
         workers.reserve(threadCount);
 
-        const clm::vec3 forward = {cosf(cameraRot.x) * sinf(cameraRot.y), -sinf(cameraRot.x), cosf(cameraRot.x) * cosf(cameraRot.y)};
-        const clm::vec3 right = {cosf(cameraRot.y), 0.f, -sinf(cameraRot.y)};
-        const clm::vec3 up = {sinf(cameraRot.x) * sinf(cameraRot.y), cosf(cameraRot.x), sinf(cameraRot.x) * cosf(cameraRot.y)};
+        Camera::Basis basis = camera.getBasis();
 
         const float aspectRatio = static_cast<float>(imageSize.x) / imageSize.y;
         const float smallestDot = clm::vec3(clm::unitToSignedRange(0.5f / imageSize.x) * aspectRatio * TAN_HALF_FOV, -clm::unitToSignedRange(0.5f / imageSize.y) * TAN_HALF_FOV, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
@@ -120,11 +118,11 @@ namespace CL
                     const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / imageSize.x) * aspectRatio * TAN_HALF_FOV;
                     const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / imageSize.y) * TAN_HALF_FOV;
 
-                    const clm::vec3 rayDirection = (right * ndcX + up * ndcY + forward).normalized();
+                    const clm::vec3 rayDirection = (basis.right * ndcX + basis.up * ndcY + basis.forward).normalized();
 
                     clm::vec4 pixelColor = {clearColor.x, clearColor.y, clearColor.z, 1.f};
 
-                    const float vignette = (rayDirection.dot(forward) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
+                    const float vignette = (rayDirection.dot(basis.forward) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
 
                     const uint32_t pixelIndex = (pixelY * imageSize.x + pixelX) * 3;
 
@@ -132,7 +130,7 @@ namespace CL
                     uint32_t hitMeshIndex = INVALID_INDEX;
                     clm::vec3 normal;
                     clm::vec3 intersectionPoint;
-                    castRay(models, cameraPos, rayDirection, &hitModelIndex, &hitMeshIndex, &normal, &intersectionPoint);
+                    castRay(models, camera.getPos(), rayDirection, &hitModelIndex, &hitMeshIndex, &normal, &intersectionPoint);
 
                     if (hitMeshIndex != INVALID_INDEX)
                     {

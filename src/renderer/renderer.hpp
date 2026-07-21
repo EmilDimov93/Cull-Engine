@@ -94,58 +94,52 @@ namespace CL
         void renderToPPM(clm::uvec2 imageSize);
 
     private:
+        // Shared
+        
         static constexpr uint32_t INVALID_INDEX = std::numeric_limits<uint32_t>::max();
 
         static constexpr float FOV = clm::PI / 3;
         const float TAN_HALF_FOV = std::tan(FOV / 2.f);
 
-        static constexpr clm::vec4 SELECTED_MODEL_COLOR = clm::vec4(255.f, 255.f, 0.f, 255.f);
-
         static constexpr float ZNEAR = 0.001f;
         static constexpr float ZFAR = 1000.f;
 
-        Model gizmoArrow;
-        static constexpr Material gizmoArrowXMaterial = Material({255.f, 0.f, 0.f, 255.f});
-        static constexpr Material gizmoArrowYMaterial = Material({0.f, 255.f, 0.f, 255.f});
-        static constexpr Material gizmoArrowZMaterial = Material({0.f, 0.f, 255.f, 255.f});
-        enum GizmoMode
-        {
-            GIZMO_MODE_TRANSLATE,
-            GIZMO_MODE_ROTATE,
-            GIZMO_MODE_SCALE
-        } gizmoMode = GIZMO_MODE_TRANSLATE;
-        enum GizmoDrag
-        {
-            GIZMO_DRAG_NONE,
-            GIZMO_DRAG_X_ARROW,
-            GIZMO_DRAG_Y_ARROW,
-            GIZMO_DRAG_Z_ARROW
-        } gizmoDrag = GIZMO_DRAG_NONE;
-        bool wasGPressed = false;
-
-        enum EditorViewMode
-        {
-            EDITOR_VIEW_WIREFRAME,
-            EDITOR_VIEW_SOLID
-        } editorViewMode = EDITOR_VIEW_WIREFRAME;
-
         std::vector<Model> models;
-
-        std::vector<uint8_t> colorAttachmentMain;
-        std::vector<float> depthAttachmentMain;
-        std::vector<float> depthAttachmentGizmo;
-
-        clm::ivec2 prevMousePos;
 
         clm::vec3 clearColor;
 
-        clm::vec3 cameraPos;
-        clm::vec3 cameraRot;
-        clm::mat4 viewMat;
+        class Camera
+        {
+        public:
+            struct Basis
+            {
+                clm::vec3 forward;
+                clm::vec3 right;
+                clm::vec3 up;
+            };
+
+            void update(GLFWwindow *window, float dt);
+
+            clm::mat4 viewMat() { return mat; };
+
+            Basis getBasis()
+            {
+                return Basis{
+                    .forward = clm::vec3(cosf(rot.x) * sinf(rot.y), -sinf(rot.x), cosf(rot.x) * cosf(rot.y)),
+                    .right = clm::vec3(cosf(rot.y), 0.f, -sinf(rot.y)),
+                    .up = clm::vec3(sinf(rot.x) * sinf(rot.y), cosf(rot.x), sinf(rot.x) * cosf(rot.y))};
+            }
+
+            clm::vec3 getPos() { return pos; }
+
+        private:
+            clm::vec3 pos;
+            clm::vec3 rot;
+
+            clm::mat4 mat;
+        } camera;
 
         clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
-
-        uint32_t selectedModelIndex = INVALID_INDEX;
 
         float dt = 0.f;
 
@@ -156,18 +150,59 @@ namespace CL
         float aspectRatio;
         clm::mat4 projectionMat;
 
-        clm::uvec2 resultImageSize = {100u, 100u};
+        static void castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
+
+        // Editor
+
+        static constexpr clm::vec4 SELECTED_MODEL_TINT = clm::vec4(255.f, 255.f, 0.f, 255.f);
+
+        static constexpr Material gizmoArrowXMaterial = Material({255.f, 0.f, 0.f, 255.f});
+        static constexpr Material gizmoArrowYMaterial = Material({0.f, 255.f, 0.f, 255.f});
+        static constexpr Material gizmoArrowZMaterial = Material({0.f, 0.f, 255.f, 255.f});
+
+        std::vector<uint8_t> colorAttachmentMain;
+        std::vector<float> depthAttachmentMain;
+        std::vector<float> depthAttachmentGizmo;
+
+        clm::ivec2 prevMousePos;
+
+        uint32_t selectedModelIndex = INVALID_INDEX;
+
+        Model gizmoArrow;
+        
+        enum GizmoMode
+        {
+            GIZMO_MODE_TRANSLATE,
+            GIZMO_MODE_ROTATE,
+            GIZMO_MODE_SCALE
+        } gizmoMode = GIZMO_MODE_TRANSLATE;
+
+        enum GizmoDrag
+        {
+            GIZMO_DRAG_NONE,
+            GIZMO_DRAG_X_ARROW,
+            GIZMO_DRAG_Y_ARROW,
+            GIZMO_DRAG_Z_ARROW
+        } gizmoDrag = GIZMO_DRAG_NONE;
+
+        bool wasGPressed = false;
+
+        enum EditorViewMode
+        {
+            EDITOR_VIEW_WIREFRAME,
+            EDITOR_VIEW_SOLID
+        } editorViewMode = EDITOR_VIEW_WIREFRAME;
 
         void renderImageRasterized();
-        [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(clm::uvec2 imageSize);
-
-        void updateCamera();
 
         uint32_t findHoveredModel(clm::ivec2 mousePos);
-
-        void drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, std::vector<float>& depthAttachment, bool isSolid, bool hasShading);
-
-        static void castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
+        void drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, std::vector<float> &depthAttachment, bool isSolid, bool hasShading);
         void debugRay(clm::vec3 origin, clm::vec3 dir);
+
+        // Ray-Tracer
+
+        clm::uvec2 resultImageSize = {100u, 100u};
+
+        [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(clm::uvec2 imageSize);
     };
 }
