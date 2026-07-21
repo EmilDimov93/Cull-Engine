@@ -186,7 +186,7 @@ namespace CL
 
     void Renderer::addModel(Model &model)
     {
-        models.push_back(model);
+        models.push_back(std::move(model));
     }
 
     void Renderer::updateCamera()

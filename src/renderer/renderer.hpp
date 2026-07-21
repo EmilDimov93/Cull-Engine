@@ -11,6 +11,7 @@
 #include <fstream>
 #include <array>
 #include <algorithm>
+#include <limits>
 
 #include <GLFW/glfw3.h>
 
@@ -164,7 +165,9 @@ namespace CL
 
         uint32_t findHoveredModel(clm::ivec2 mousePos);
 
+        void drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, std::vector<float>& depthAttachment, bool isSolid, bool hasShading);
+
         static void castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
-        void debugRay(clm::vec3 origin, clm::vec3 dir, std::vector<uint8_t> &image);
+        void debugRay(clm::vec3 origin, clm::vec3 dir);
     };
 }
