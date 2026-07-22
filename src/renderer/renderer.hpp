@@ -143,13 +143,6 @@ namespace CL
 
         float dt = 0.f;
 
-        float vignetteStrength = 0.f;
-
-        GLFWwindow *window;
-        clm::uvec2 windowSize;
-        float aspectRatio;
-        clm::mat4 projectionMat;
-
         static void castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint);
 
         // Editor
@@ -159,6 +152,11 @@ namespace CL
         static constexpr Material gizmoArrowXMaterial = Material({255.f, 0.f, 0.f, 255.f});
         static constexpr Material gizmoArrowYMaterial = Material({0.f, 255.f, 0.f, 255.f});
         static constexpr Material gizmoArrowZMaterial = Material({0.f, 0.f, 255.f, 255.f});
+
+        GLFWwindow *window;
+        clm::uvec2 windowSize;
+        float aspectRatio;
+        clm::mat4 projectionMat;
 
         std::vector<uint8_t> colorAttachmentMain;
         std::vector<float> depthAttachmentMain;
@@ -202,6 +200,8 @@ namespace CL
         // Ray-Tracer
 
         clm::uvec2 resultImageSize = {100u, 100u};
+
+        float vignetteStrength = 0.f;
 
         [[nodiscard]] const std::vector<uint8_t> getImageRayTraced(clm::uvec2 imageSize);
     };
