@@ -124,8 +124,6 @@ namespace CL
 
                     const float vignette = (rayDirection.dot(basis.forward) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
 
-                    const uint32_t pixelIndex = (pixelY * imageSize.x + pixelX) * 3;
-
                     uint32_t hitModelIndex = INVALID_INDEX;
                     uint32_t hitMeshIndex = INVALID_INDEX;
                     clm::vec3 normal;
@@ -148,9 +146,7 @@ namespace CL
                         }
                     }
 
-                    image[pixelIndex] = static_cast<uint8_t>(pixelColor.x * vignette);
-                    image[pixelIndex + 1] = static_cast<uint8_t>(pixelColor.y * vignette);
-                    image[pixelIndex + 2] = static_cast<uint8_t>(pixelColor.z * vignette);
+                    placePixel3c(pixelColor * vignette, pixelX, pixelY, image, imageSize.x);
                 }
             }
         };

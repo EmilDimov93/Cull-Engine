@@ -111,14 +111,17 @@ namespace clm
         }
     };
 
+    [[nodiscard]] constexpr float clamp(float value, float min, float max)
+    {
+        return value < min ? min : (max < value ? max : value);
+    }
+
     [[nodiscard]] constexpr clm::vec4 clamp(const clm::vec4 &v, float min, float max)
     {
-        return clm::vec4(
-            std::clamp(v.x, min, max),
-            std::clamp(v.y, min, max),
-            std::clamp(v.z, min, max),
-            std::clamp(v.w, min, max)
-        );
+        return clm::vec4(clamp(v.x, min, max),
+                         clamp(v.y, min, max),
+                         clamp(v.z, min, max),
+                         clamp(v.w, min, max));
     }
 
     struct mat4

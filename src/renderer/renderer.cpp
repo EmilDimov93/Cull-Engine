@@ -80,7 +80,7 @@ namespace CL
         rot.y += ((glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)) * clm::PI * dt * speed;
 
         rot.x += ((glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) - (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)) * clm::PI * dt * speed;
-        rot.x = std::clamp(rot.x, -clm::PI / 2, clm::PI / 2);
+        rot.x = clm::clamp(rot.x, -clm::PI / 2, clm::PI / 2);
 
         Basis basis = getBasis();
 
