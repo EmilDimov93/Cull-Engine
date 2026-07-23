@@ -8,7 +8,7 @@
 
 namespace clm
 {
-    static constexpr float PI = 3.14159265f;
+    inline constexpr float PI = 3.14159265f;
 
     struct ivec2
     {
@@ -110,6 +110,16 @@ namespace clm
             return vec4(x / scalar, y / scalar, z / scalar, w / scalar);
         }
     };
+
+    [[nodiscard]] constexpr clm::vec4 clamp(const clm::vec4 &v, float min, float max)
+    {
+        return clm::vec4(
+            std::clamp(v.x, min, max),
+            std::clamp(v.y, min, max),
+            std::clamp(v.z, min, max),
+            std::clamp(v.w, min, max)
+        );
+    }
 
     struct mat4
     {
@@ -245,12 +255,12 @@ namespace clm
         }
     };
 
-    inline float constexpr unitToSignedRange(float unitValue)
+    constexpr float unitToSignedRange(float unitValue)
     {
         return unitValue * 2.f - 1.f;
     }
 
-    inline float constexpr signedToUnitRange(float signedValue)
+    constexpr float signedToUnitRange(float signedValue)
     {
         return (signedValue + 1.f) / 2.f;
     }
