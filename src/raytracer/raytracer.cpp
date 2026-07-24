@@ -6,7 +6,7 @@
 #include <thread>
 #include <fstream>
 #include <array>
-
+#include <iostream>
 namespace CL
 {
     [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
@@ -110,8 +110,6 @@ namespace CL
 
             const float aspectRatio = static_cast<float>(imageSize.x) / imageSize.y;
             const float tanHalfFov = std::tan(fov / 2.f);
-            const float smallestDot = clm::vec3(clm::unitToSignedRange(0.5f / imageSize.x) * aspectRatio * tanHalfFov, -clm::unitToSignedRange(0.5f / imageSize.y) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
-            const float biggestDot = clm::vec3(clm::unitToSignedRange((imageSize.x / 2.f + 0.5f) / imageSize.x) * aspectRatio * tanHalfFov, -clm::unitToSignedRange((imageSize.y / 2.f + 0.5f) / imageSize.y) * tanHalfFov, 1.f).normalized().dot(clm::vec3(0.f, 0.f, 1.f));
 
             auto renderRows = [&](unsigned int threadIndex)
             {
@@ -126,7 +124,9 @@ namespace CL
 
                         clm::vec4 pixelColor(scene.clearColor, 1.f);
 
-                        const float vignette = (rayDirection.dot(basis.forward) - smallestDot) * (1.f / ((biggestDot - smallestDot) * vignetteStrength));
+                        const float vignetteX = static_cast<float>(pixelX > imageSize.x / 2 ? imageSize.x - pixelX : pixelX) / (imageSize.x / 2);
+                        const float vignetteY = static_cast<float>(pixelY > imageSize.y / 2 ? imageSize.y - pixelY : pixelY) / (imageSize.y / 2);
+                        const float vignette = 1.0f - vignetteStrength * (1.0f - (vignetteX + vignetteY) * 0.5f);
 
                         uint32_t hitModelIndex = INVALID_INDEX;
                         uint32_t hitMeshIndex = INVALID_INDEX;
