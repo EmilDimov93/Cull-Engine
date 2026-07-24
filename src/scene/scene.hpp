@@ -1,0 +1,92 @@
+// Copyright 2026 Emil Dimov
+// Licensed under the Apache License, Version 2.0
+
+#pragma once
+
+#include "../math/clm.hpp"
+
+#include "camera.hpp"
+
+#include <vector>
+#include <string>
+#include <limits>
+
+namespace CL
+{
+    static constexpr uint32_t INVALID_INDEX = std::numeric_limits<uint32_t>::max();
+
+    struct Vertex
+    {
+        clm::vec3 pos;
+
+        constexpr Vertex(clm::vec3 pos) : pos(pos) {}
+    };
+
+    struct Material
+    {
+        clm::vec4 color;
+
+        constexpr Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}) : color(color) {}
+
+        constexpr Material tinted(clm::vec4 tint, float tintFactor) const
+        {
+            tint = tint * tintFactor;
+            clm::vec4 baseColor = color * (1.f - tintFactor);
+            return Material(baseColor + tint);
+        }
+    };
+
+    struct Mesh
+    {
+        std::vector<Vertex> vertices;
+        std::vector<uint32_t> indices;
+
+        uint32_t materialIndex;
+
+        Mesh(const std::vector<Vertex> &vertices, const std::vector<uint32_t> indices, uint32_t materialIndex) : vertices(vertices), indices(indices), materialIndex(materialIndex) {}
+    };
+
+    struct Model
+    {
+        std::vector<Mesh> meshes;
+        std::vector<Material> materials;
+
+        struct Transform
+        {
+            clm::vec3 pos;
+            clm::quaternion rot;
+            clm::vec3 scale;
+
+            clm::mat4 mat() const
+            {
+                return clm::mat4::translation(pos.x, pos.y, pos.z) * rot.mat() * clm::mat4::scale(scale.x, scale.y, scale.z);
+            };
+
+            Transform(clm::vec3 pos = {}, clm::vec3 rot = {}, clm::vec3 scale = {1.f, 1.f, 1.f}) : pos(pos), rot(rot), scale(scale) {}
+        } transform;
+
+        Model(const std::vector<Mesh> &meshes, const std::vector<Material> &materials, Transform transform = Transform()) : meshes(meshes), materials(materials), transform(transform) {}
+        Model() {}
+    };
+
+    [[nodiscard]] Model loadOBJ(const std::string &filePath);
+
+    struct Scene
+    {
+        std::vector<Model> models;
+        Camera camera;
+        clm::vec3 clearColor;
+        clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
+
+        uint32_t addModel(Model &model)
+        {
+            models.push_back(std::move(model));
+            return static_cast<uint32_t>(models.size() - 1);
+        }
+
+        void removeModel(uint32_t index)
+        {
+            models.erase(models.begin() + index);
+        }
+    };
+}

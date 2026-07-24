@@ -1,7 +1,7 @@
 // Copyright 2026 Emil Dimov
 // Licensed under the Apache License, Version 2.0
 
-#include "renderer.hpp"
+#include "editor.hpp"
 
 namespace CL
 {
@@ -124,7 +124,7 @@ namespace CL
         drawLine(pts[2], pts[0], image.data(), depthBuffer.data(), imageSize, material, shade);
     }
 
-    void Renderer::drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, std::vector<float> &depthAttachment, bool isSolid, bool hasShading)
+    void Editor::drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, std::vector<float> &depthAttachment, bool isSolid, bool hasShading)
     {
         uint32_t currPoint = 0;
         std::array<clm::vec3, 3> points;
@@ -133,7 +133,7 @@ namespace CL
         for (uint32_t index : mesh.indices)
         {
             pointsWorld[currPoint] = modelMat * mesh.vertices[index].pos;
-            pointsView[currPoint] = camera.viewMat() * pointsWorld[currPoint];
+            pointsView[currPoint] = scene.camera.viewMat() * pointsWorld[currPoint];
 
             if (pointsView[currPoint].z < ZNEAR)
             {
@@ -144,8 +144,8 @@ namespace CL
             const clm::vec4 pointClip = projectionMat * clm::vec4(pointsView[currPoint], 1.f);
             const clm::vec2 ndc(pointClip.x / pointClip.w, pointClip.y / pointClip.w);
 
-            points[currPoint] = {clm::signedToUnitRange(ndc.x) * windowSize.x,
-                                 clm::signedToUnitRange(ndc.y) * windowSize.y,
+            points[currPoint] = {clm::signedToUnitRange(ndc.x) * window.size.x,
+                                 clm::signedToUnitRange(ndc.y) * window.size.y,
                                  pointsView[currPoint].z};
 
             if (currPoint == 2)
@@ -158,13 +158,13 @@ namespace CL
                     const clm::vec3 worldNormal = edge1.cross(edge2).normalized();
 
                     const float ambient = 0.25f;
-                    shade = std::max(0.f, worldNormal.dot(surfaceToSunDir) + ambient);
+                    shade = std::max(0.f, worldNormal.dot(scene.surfaceToSunDir) + ambient);
                 }
 
                 if (isSolid)
-                    drawTriangleSolid(colorAttachmentMain, windowSize, points, depthAttachment, material, shade);
+                    drawTriangleSolid(colorAttachmentMain, window.size, points, depthAttachment, material, shade);
                 else
-                    drawTriangleWireframe(colorAttachmentMain, windowSize, points, depthAttachment, material, shade);
+                    drawTriangleWireframe(colorAttachmentMain, window.size, points, depthAttachment, material, shade);
                 currPoint = 0;
             }
             else
@@ -174,24 +174,24 @@ namespace CL
         }
     }
 
-    void Renderer::renderImageRasterized()
+    void Editor::renderImageRasterized()
     {
         std::fill(depthAttachmentMain.begin(), depthAttachmentMain.end(), std::numeric_limits<float>::infinity());
         std::fill(depthAttachmentGizmo.begin(), depthAttachmentGizmo.end(), std::numeric_limits<float>::infinity());
 
-        for (uint32_t i = 0; i < windowSize.x * windowSize.y * 3; i += 3)
+        for (uint32_t i = 0; i < window.size.x * window.size.y * 3; i += 3)
         {
-            colorAttachmentMain[i] = static_cast<uint8_t>(clearColor.x);
-            colorAttachmentMain[i + 1] = static_cast<uint8_t>(clearColor.y);
-            colorAttachmentMain[i + 2] = static_cast<uint8_t>(clearColor.z);
+            colorAttachmentMain[i] = static_cast<uint8_t>(scene.clearColor.x);
+            colorAttachmentMain[i + 1] = static_cast<uint8_t>(scene.clearColor.y);
+            colorAttachmentMain[i + 2] = static_cast<uint8_t>(scene.clearColor.z);
         }
 
-        for (uint32_t modelIndex = 0; modelIndex < models.size(); modelIndex++)
+        for (uint32_t modelIndex = 0; modelIndex < scene.models.size(); modelIndex++)
         {
-            const clm::mat4 modelMat = models[modelIndex].transform.mat();
-            for (const Mesh &mesh : models[modelIndex].meshes)
+            const clm::mat4 modelMat = scene.models[modelIndex].transform.mat();
+            for (const Mesh &mesh : scene.models[modelIndex].meshes)
             {
-                const Material &material = models[modelIndex].materials[mesh.materialIndex];
+                const Material &material = scene.models[modelIndex].materials[mesh.materialIndex];
                 const Material materialTinted = (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_TINT, 0.2f) : material);
                 drawMesh(mesh, materialTinted, modelMat, depthAttachmentMain, (editorViewMode == EDITOR_VIEW_SOLID), true);
             }
@@ -199,9 +199,9 @@ namespace CL
 
         if (selectedModelIndex != INVALID_INDEX)
         {
-            const clm::mat4 gizmoArrowXModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.2f, 0.4f, 0.2f}).mat();
-            const clm::mat4 gizmoArrowYModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
-            const clm::mat4 gizmoArrowZModelMat = Model::Transform(models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
+            const clm::mat4 gizmoArrowXModelMat = Model::Transform(scene.models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.2f, 0.4f, 0.2f}).mat();
+            const clm::mat4 gizmoArrowYModelMat = Model::Transform(scene.models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
+            const clm::mat4 gizmoArrowZModelMat = Model::Transform(scene.models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
 
             for (const Mesh &mesh : gizmoArrow.meshes)
             {
@@ -212,37 +212,37 @@ namespace CL
         }
     }
 
-    void Renderer::debugRay(clm::vec3 origin, clm::vec3 dir)
+    void Editor::debugRay(clm::vec3 origin, clm::vec3 dir)
     {
-        const clm::vec4 originClip = projectionMat * camera.viewMat() * clm::vec4(origin, 1.f);
+        const clm::vec4 originClip = projectionMat * scene.camera.viewMat() * clm::vec4(origin, 1.f);
         const clm::vec3 originNdc(originClip.x / originClip.w, originClip.y / originClip.w, originClip.z / originClip.w);
-        const clm::ivec2 originScreen(static_cast<int32_t>(clm::signedToUnitRange(originNdc.x) * windowSize.x), static_cast<int32_t>(clm::signedToUnitRange(originNdc.y) * windowSize.y));
+        const clm::ivec2 originScreen(static_cast<int32_t>(clm::signedToUnitRange(originNdc.x) * window.size.x), static_cast<int32_t>(clm::signedToUnitRange(originNdc.y) * window.size.y));
 
         uint32_t hitModel = INVALID_INDEX;
         clm::vec3 intersectionPoint;
-        castRay(models, origin, dir, &hitModel, nullptr, nullptr, &intersectionPoint);
+        castRay(scene.models, origin, dir, &hitModel, nullptr, nullptr, &intersectionPoint);
 
         if (hitModel == INVALID_INDEX)
             intersectionPoint = origin + dir * 10.f;
 
-        const clm::vec4 destClip = projectionMat * camera.viewMat() * clm::vec4(intersectionPoint, 1.f);
+        const clm::vec4 destClip = projectionMat * scene.camera.viewMat() * clm::vec4(intersectionPoint, 1.f);
         const clm::vec3 destNdc(destClip.x / destClip.w, destClip.y / destClip.w, destClip.z / destClip.w);
-        const clm::ivec2 destScreen(static_cast<int32_t>(clm::signedToUnitRange(destNdc.x) * windowSize.x), static_cast<int32_t>(clm::signedToUnitRange(destNdc.y) * windowSize.y));
+        const clm::ivec2 destScreen(static_cast<int32_t>(clm::signedToUnitRange(destNdc.x) * window.size.x), static_cast<int32_t>(clm::signedToUnitRange(destNdc.y) * window.size.y));
 
         auto drawMarker = [&](clm::ivec2 screen, float w, clm::vec3 color)
         {
             static constexpr uint32_t markerSize = 10;
             if (w > 0.f)
             {
-                if (screen.x >= markerSize && screen.x < windowSize.x - markerSize && screen.y >= markerSize && screen.y < windowSize.y - markerSize)
+                if (screen.x >= markerSize && screen.x < window.size.x - markerSize && screen.y >= markerSize && screen.y < window.size.y - markerSize)
                 {
                     for (uint32_t i = screen.x - markerSize; i < screen.x + markerSize; i++)
                     {
                         for (uint32_t j = screen.y - markerSize; j < screen.y + markerSize; j++)
                         {
-                            colorAttachmentMain[j * windowSize.x * 3 + i * 3] = static_cast<uint8_t>(color.x);
-                            colorAttachmentMain[j * windowSize.x * 3 + i * 3 + 1] = static_cast<uint8_t>(color.y);
-                            colorAttachmentMain[j * windowSize.x * 3 + i * 3 + 2] = static_cast<uint8_t>(color.z);
+                            colorAttachmentMain[j * window.size.x * 3 + i * 3] = static_cast<uint8_t>(color.x);
+                            colorAttachmentMain[j * window.size.x * 3 + i * 3 + 1] = static_cast<uint8_t>(color.y);
+                            colorAttachmentMain[j * window.size.x * 3 + i * 3 + 2] = static_cast<uint8_t>(color.z);
                         }
                     }
                 }
@@ -250,7 +250,7 @@ namespace CL
         };
 
         if (originClip.w > 0.f && destClip.w > 0.f)
-            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, colorAttachmentMain.data(), nullptr, windowSize, Material({255.f, 255.f, 0.f}), 1.f);
+            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, colorAttachmentMain.data(), nullptr, window.size, Material({255.f, 255.f, 0.f}), 1.f);
 
         drawMarker(originScreen, originClip.w, {255.f, 0.f, 0.f});
         drawMarker(destScreen, destClip.w, (hitModel == INVALID_INDEX ? clm::vec3(255.f, 255.f, 0.f) : clm::vec3(0.f, 255.f, 0.f)));

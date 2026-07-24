@@ -1,16 +1,18 @@
 // Copyright 2026 Emil Dimov
 // Licensed under the Apache License, Version 2.0
 
-#include "renderer.hpp"
+#include "scene.hpp"
 
 #include <unordered_map>
+#include <fstream>
 #include <sstream>
 #include <filesystem>
 #include <string>
+#include <stdexcept>
 
 namespace CL
 {
-    Model Renderer::loadOBJ(const std::string &filePath)
+    Model loadOBJ(const std::string &filePath)
     {
         std::string ext = std::filesystem::path(filePath).extension().string();
         if(ext != ".obj")
@@ -23,7 +25,7 @@ namespace CL
         std::vector<clm::vec3> positions;
         std::unordered_map<std::string, Material> materials;
 
-        uint32_t currentMaterialIndex = UINT32_MAX;
+        uint32_t currentMaterialIndex = INVALID_INDEX;
 
         std::vector<Vertex> currentMeshVertices;
         std::vector<uint32_t> currentMeshIndices;
@@ -78,7 +80,7 @@ namespace CL
                 return;
 
             uint32_t resolvedMaterialIndex = currentMaterialIndex;
-            if (resolvedMaterialIndex == UINT32_MAX)
+            if (resolvedMaterialIndex == INVALID_INDEX)
             {
                 resolvedMaterialIndex = static_cast<uint32_t>(materialList.size());
                 materialList.push_back(Material());
