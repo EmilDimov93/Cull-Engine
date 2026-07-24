@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <limits>
+#include <stdexcept>
 
 namespace CL
 {
@@ -78,14 +79,16 @@ namespace CL
         clm::vec3 clearColor;
         clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
 
-        uint32_t addModel(Model &model)
+        uint32_t addModel(const Model &model)
         {
-            models.push_back(std::move(model));
+            models.push_back(model);
             return static_cast<uint32_t>(models.size() - 1);
         }
 
         void removeModel(uint32_t index)
         {
+            if(index > models.size() - 1)
+                throw std::runtime_error("Invalid index");
             models.erase(models.begin() + index);
         }
     };

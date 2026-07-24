@@ -10,7 +10,7 @@ A CPU rendering engine pairing a real-time scene editor with a multi-threaded of
 | --- | --- |
 | <img width="994" height="991" alt="beetleCowEditor" src="https://github.com/user-attachments/assets/d04780f2-61da-4cf0-b6d3-43cdf62b6a3c" /> | <img width="1000" height="1000" alt="beetleCowRayTracer" src="https://github.com/user-attachments/assets/0f818a01-01b5-46df-a384-5107157c3524" /> | 
 
-⚠️ **Warning:** Cull Engine is in active development and it's not ready for use. If you want to experiment with it anyway, refer to [run.ps1](run.ps1) and [example.cpp](src/example.cpp)
+⚠️ **Warning:** Cull Engine is in active development and it's not ready for use. If you want to experiment with it anyway, refer to [run.ps1](run.ps1) and [example.cpp](example/example.cpp)
 
 ## Two pipelines
 1. **Editor:** live window, rasterized
@@ -22,8 +22,8 @@ A CPU rendering engine pairing a real-time scene editor with a multi-threaded of
 | --- | --- |
 | Move camera | `W` `A` `S` `D` |
 | Rotate camera | Arrow keys |
-| Render to `.ppm` | `R` |
+| Render to *.ppm* | `R` |
 | Select model | Left mouse button |
-| Use gizmo | Select model, use arrows |
+| Use gizmo | Select model, drag arrows |
 | Change gizmo mode | `G` |
 | Delete model | Select model, then `Delete` |
