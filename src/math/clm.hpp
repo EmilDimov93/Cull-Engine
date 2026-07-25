@@ -293,6 +293,11 @@ namespace clm
             return quaternion(w / length, x / length, y / length, z / length);
         }
 
+        [[nodiscard]] constexpr quaternion conjugate() const
+        {
+            return quaternion(w, -x, -y, -z);
+        }
+
         [[nodiscard]] constexpr quaternion rotate(vec3 rotation) const
         {
             const float halfX = rotation.x / 2.f;

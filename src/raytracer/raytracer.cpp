@@ -6,7 +6,7 @@
 #include <thread>
 #include <fstream>
 #include <array>
-#include <iostream>
+
 namespace CL
 {
     [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
