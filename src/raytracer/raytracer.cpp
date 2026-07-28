@@ -7,6 +7,8 @@
 #include <fstream>
 #include <array>
 
+#include "bvh.hpp"
+
 namespace CL
 {
     [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
@@ -48,6 +50,76 @@ namespace CL
         else
         {
             return false;
+        }
+    }
+
+    std::vector<uint32_t> traverseBVH(const std::vector<Node> &nodes, const clm::vec3 &origin, const clm::vec3 &invDir)
+    {
+        std::vector<uint32_t> hitLeaves;
+
+        uint32_t stack[64];
+        int stackPointer = 0;
+        stack[stackPointer++] = 0;
+
+        while (stackPointer > 0)
+        {
+            uint32_t index = stack[--stackPointer];
+
+            if (!nodes[index].volume.intersects(origin, invDir))
+                continue;
+
+            uint32_t leftIndex = 2 * index + 1;
+
+            if (leftIndex > nodes.size() - 1)
+            {
+                hitLeaves.push_back(index);
+                continue;
+            }
+
+            stack[stackPointer++] = leftIndex;
+            stack[stackPointer++] = leftIndex + 1;
+        }
+
+        return hitLeaves;
+    }
+
+    void castRayBVH(const BVH &bvh, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, bool *outHasHit, Material *outMaterial, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint)
+    {
+        std::vector<uint32_t> hitLeaves = traverseBVH(bvh.nodes, rayOrigin, clm::vec3(1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z));
+
+        float closestDistance = std::numeric_limits<float>::max();
+
+        for (uint32_t leave : hitLeaves)
+        {
+            for (uint32_t i = 0; i < bvh.nodes[leave].triangles.size(); i++)
+            {
+                const std::array<clm::vec3, 3> &pts = bvh.nodes[leave].triangles[i].pts;
+                clm::vec3 intersectionPoint;
+                if (RayIntersectsTriangle(rayOrigin, rayDirection, pts, intersectionPoint))
+                {
+                    const float distance = (intersectionPoint - rayOrigin).length();
+                    if (distance < closestDistance)
+                    {
+                        closestDistance = distance;
+
+                        if(outHasHit)
+                            *outHasHit = true;
+
+                        if(outMaterial)
+                            *outMaterial = bvh.materials[bvh.nodes[leave].triangles[i].material];
+
+                        if (outNormal)
+                        {
+                            clm::vec3 edge1 = pts[1] - pts[0];
+                            clm::vec3 edge2 = pts[2] - pts[0];
+                            *outNormal = edge1.cross(edge2).normalized();
+                        }
+
+                        if (outIntersectionPoint)
+                            *outIntersectionPoint = intersectionPoint;
+                    }
+                }
+            }
         }
     }
 
@@ -97,9 +169,11 @@ namespace CL
         }
     }
 
-    void renderSceneToPPM(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength)
+    void renderSceneToPPM(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhLevelCount)
     {
         std::vector<uint8_t> image(imageSize.x * imageSize.y * 3);
+
+        BVH bvh = constructBVH(scene.models, bvhLevelCount);
 
         {
             const unsigned int threadCount = std::max(1u, std::thread::hardware_concurrency());
@@ -128,28 +202,26 @@ namespace CL
                         const float vignetteY = static_cast<float>(pixelY > imageSize.y / 2 ? imageSize.y - pixelY : pixelY) / (imageSize.y / 2);
                         const float vignette = 1.0f - vignetteStrength * (1.0f - (vignetteX + vignetteY) * 0.5f);
 
-                        uint32_t hitModelIndex = INVALID_INDEX;
-                        uint32_t hitMeshIndex = INVALID_INDEX;
+                        Material material;
                         clm::vec3 normal;
                         clm::vec3 intersectionPoint;
-                        castRay(scene.models, scene.camera.getPos(), rayDirection, &hitModelIndex, &hitMeshIndex, &normal, &intersectionPoint);
+                        bool hasHit = false;
 
-                        if (hitMeshIndex != INVALID_INDEX)
+                        castRayBVH(bvh, scene.camera.getPos(), rayDirection, &hasHit, &material, &normal, &intersectionPoint);
+
+                        if (hasHit)
                         {
-                            const Material &material = scene.models[hitModelIndex].materials[scene.models[hitModelIndex].meshes[hitMeshIndex].materialIndex];
-
-                            uint32_t shadowHitModelIndex = INVALID_INDEX;
-                            castRay(scene.models, intersectionPoint, scene.surfaceToSunDir, &shadowHitModelIndex, nullptr, nullptr, nullptr);
-                            if (shadowHitModelIndex != INVALID_INDEX)
+                            hasHit = false;
+                            castRayBVH(bvh, intersectionPoint, scene.surfaceToSunDir, &hasHit, nullptr, nullptr, nullptr);
+                            if (hasHit)
                             {
-                                pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 0.5f).color;
+                                pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 1.f - clm::signedToUnitRange(normal.dot(scene.surfaceToSunDir))).color;
                             }
                             else
                             {
                                 pixelColor = material.color;
                             }
                         }
-
                         placePixel3c(pixelColor * vignette, pixelX, pixelY, image, imageSize.x);
                     }
                 }
