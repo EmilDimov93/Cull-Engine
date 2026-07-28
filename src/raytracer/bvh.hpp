@@ -25,16 +25,38 @@ namespace CL
             return point.x >= min.x && point.y >= min.y && point.z >= min.z &&
                    point.x <= max.x && point.y <= max.y && point.z <= max.z;
         }
+
+        bool intersects(const clm::vec3 &origin, const clm::vec3 &invDir) const
+        {
+            float tx1 = (min.x - origin.x) * invDir.x;
+            float tx2 = (max.x - origin.x) * invDir.x;
+            float tMin = std::min(tx1, tx2);
+            float tMax = std::max(tx1, tx2);
+
+            float ty1 = (min.y - origin.y) * invDir.y;
+            float ty2 = (max.y - origin.y) * invDir.y;
+            tMin = std::max(tMin, std::min(ty1, ty2));
+            tMax = std::min(tMax, std::max(ty1, ty2));
+
+            float tz1 = (min.z - origin.z) * invDir.z;
+            float tz2 = (max.z - origin.z) * invDir.z;
+            tMin = std::max(tMin, std::min(tz1, tz2));
+            tMax = std::min(tMax, std::max(tz1, tz2));
+
+            return tMax >= std::max(tMin, 0.0f);
+        }
     };
 
     struct Node
     {
         AABB volume;
+
+        std::vector<Vertex> vertices;
     };
 
     std::vector<Node> constructBVH(const std::vector<Model> &models, uint32_t levelCount)
     {
-        if(levelCount == 0)
+        if (levelCount == 0)
             throw std::runtime_error("Invalid BVH level count");
 
         clm::vec3 min(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
@@ -96,13 +118,13 @@ namespace CL
             clm::vec3 leftMax = full.max;
             clm::vec3 rightMin = full.min;
 
-            if(xLen >= yLen && xLen >= zLen)
+            if (xLen >= yLen && xLen >= zLen)
             {
                 const float mid = midPoint(full.min.x, full.max.x);
                 leftMax.x = mid;
                 rightMin.x = mid;
             }
-            else if(yLen >= xLen && yLen >= zLen)
+            else if (yLen >= xLen && yLen >= zLen)
             {
                 const float mid = midPoint(full.min.y, full.max.y);
                 leftMax.y = mid;
@@ -119,11 +141,50 @@ namespace CL
             nodes[right(index)].volume = AABB(rightMin, full.max);
         };
 
-        for(uint32_t i = 0; i < levelCount - 1; i++)
+        for (uint32_t i = 0; i < levelCount - 1; i++)
         {
-            for(uint32_t j = 0; j < (1u << i); j++)
+            for (uint32_t j = 0; j < (1u << i); j++)
             {
                 subDivide((1u << i) - 1 + j);
+            }
+        }
+
+        auto addTriangle = [&](auto &&self, const std::array<clm::vec3, 3> &pts, uint32_t i)
+        {
+            if (left(i) > nodes.size() - 1)
+            {
+                nodes[i].vertices.push_back(pts[0]);
+                nodes[i].vertices.push_back(pts[1]);
+                nodes[i].vertices.push_back(pts[2]);
+
+                return;
+            }
+
+            if (nodes[left(i)].volume.contains(pts[0]) || nodes[left(i)].volume.contains(pts[1]) || nodes[left(i)].volume.contains(pts[2]))
+            {
+                self(self, pts, left(i));
+            }
+
+            if (nodes[right(i)].volume.contains(pts[0]) || nodes[right(i)].volume.contains(pts[1]) || nodes[right(i)].volume.contains(pts[2]))
+            {
+                self(self, pts, right(i));
+            }
+        };
+
+        for (const Model &model : models)
+        {
+            clm::mat4 mat = model.transform.mat();
+            for (const Mesh &mesh : model.meshes)
+            {
+                std::array<clm::vec3, 3> pts;
+                for (uint32_t i = 0; i < mesh.indices.size(); i++)
+                {
+                    pts[i % 3] = mat * mesh.vertices[i].pos;
+                    if (i % 3 == 2)
+                    {
+                        addTriangle(addTriangle, pts, 0);
+                    }
+                }
             }
         }
 
