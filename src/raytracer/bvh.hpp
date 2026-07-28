@@ -10,6 +10,7 @@
 #include <vector>
 #include <limits>
 #include <stdexcept>
+#include <array>
 
 namespace CL
 {
@@ -47,17 +48,34 @@ namespace CL
         }
     };
 
+    struct Triangle
+    {
+        std::array<clm::vec3, 3> pts;
+        uint32_t material;
+
+        Triangle() = default;
+        Triangle(std::array<clm::vec3, 3> pts, uint32_t material) : pts(pts), material(material) {}
+    };
+
     struct Node
     {
         AABB volume;
 
-        std::vector<Vertex> vertices;
+        std::vector<Triangle> triangles;
     };
 
-    std::vector<Node> constructBVH(const std::vector<Model> &models, uint32_t levelCount)
+    struct BVH
+    {
+        std::vector<Node> nodes;
+        std::vector<Material> materials;
+    };
+
+    BVH constructBVH(const std::vector<Model> &models, uint32_t levelCount)
     {
         if (levelCount == 0)
             throw std::runtime_error("Invalid BVH level count");
+
+        BVH bvh;
 
         clm::vec3 min(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
         clm::vec3 max(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
@@ -88,9 +106,9 @@ namespace CL
             }
         }
 
-        std::vector<Node> nodes((1u << levelCount) - 1);
+        bvh.nodes.resize((1u << levelCount) - 1);
 
-        nodes[0].volume = AABB(min, max);
+        bvh.nodes[0].volume = AABB(min, max);
 
         auto left = [](uint32_t index)
         {
@@ -104,7 +122,7 @@ namespace CL
 
         auto subDivide = [&](uint32_t index)
         {
-            const AABB &full = nodes[index].volume;
+            const AABB &full = bvh.nodes[index].volume;
 
             float xLen = full.max.x - full.min.x;
             float yLen = full.max.y - full.min.y;
@@ -137,8 +155,8 @@ namespace CL
                 rightMin.z = mid;
             }
 
-            nodes[left(index)].volume = AABB(full.min, leftMax);
-            nodes[right(index)].volume = AABB(rightMin, full.max);
+            bvh.nodes[left(index)].volume = AABB(full.min, leftMax);
+            bvh.nodes[right(index)].volume = AABB(rightMin, full.max);
         };
 
         for (uint32_t i = 0; i < levelCount - 1; i++)
@@ -149,28 +167,27 @@ namespace CL
             }
         }
 
-        auto addTriangle = [&](auto &&self, const std::array<clm::vec3, 3> &pts, uint32_t i)
+        auto addTriangle = [&](auto &&self, const std::array<clm::vec3, 3> &pts, uint32_t materialIndex, uint32_t i)
         {
-            if (left(i) > nodes.size() - 1)
+            if (left(i) > bvh.nodes.size() - 1)
             {
-                nodes[i].vertices.push_back(pts[0]);
-                nodes[i].vertices.push_back(pts[1]);
-                nodes[i].vertices.push_back(pts[2]);
+                bvh.nodes[i].triangles.emplace_back(pts, materialIndex);
 
                 return;
             }
 
-            if (nodes[left(i)].volume.contains(pts[0]) || nodes[left(i)].volume.contains(pts[1]) || nodes[left(i)].volume.contains(pts[2]))
+            if (bvh.nodes[left(i)].volume.contains(pts[0]) || bvh.nodes[left(i)].volume.contains(pts[1]) || bvh.nodes[left(i)].volume.contains(pts[2]))
             {
-                self(self, pts, left(i));
+                self(self, pts, materialIndex, left(i));
             }
 
-            if (nodes[right(i)].volume.contains(pts[0]) || nodes[right(i)].volume.contains(pts[1]) || nodes[right(i)].volume.contains(pts[2]))
+            if (bvh.nodes[right(i)].volume.contains(pts[0]) || bvh.nodes[right(i)].volume.contains(pts[1]) || bvh.nodes[right(i)].volume.contains(pts[2]))
             {
-                self(self, pts, right(i));
+                self(self, pts, materialIndex, right(i));
             }
         };
 
+        uint32_t startMaterialIndex = 0;
         for (const Model &model : models)
         {
             clm::mat4 mat = model.transform.mat();
@@ -179,15 +196,18 @@ namespace CL
                 std::array<clm::vec3, 3> pts;
                 for (uint32_t i = 0; i < mesh.indices.size(); i++)
                 {
-                    pts[i % 3] = mat * mesh.vertices[i].pos;
+                    pts[i % 3] = mat * mesh.vertices[mesh.indices[i]].pos;
                     if (i % 3 == 2)
                     {
-                        addTriangle(addTriangle, pts, 0);
+                        addTriangle(addTriangle, pts, startMaterialIndex + mesh.materialIndex, 0);
                     }
                 }
             }
+
+            bvh.materials.insert(bvh.materials.end(), model.materials.begin(), model.materials.end());
+            startMaterialIndex = bvh.materials.size();
         }
 
-        return nodes;
+        return bvh;
     }
 }
