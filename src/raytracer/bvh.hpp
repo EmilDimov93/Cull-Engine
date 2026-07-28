@@ -82,10 +82,41 @@ namespace CL
 
         auto subDivide = [&](uint32_t index)
         {
-            AABB full = nodes[index].volume;
+            const AABB &full = nodes[index].volume;
 
-            nodes[left(index)].volume = AABB(full.min, clm::vec3(full.min.x + (full.max.x - full.min.x) / 2, full.max.y, full.max.z));
-            nodes[right(index)].volume = AABB(clm::vec3(full.min.x + (full.max.x - full.min.x) / 2, full.min.y, full.min.z), full.max);
+            float xLen = full.max.x - full.min.x;
+            float yLen = full.max.y - full.min.y;
+            float zLen = full.max.z - full.min.z;
+
+            auto midPoint = [](float min, float max)
+            {
+                return min + (max - min) / 2;
+            };
+
+            clm::vec3 leftMax = full.max;
+            clm::vec3 rightMin = full.min;
+
+            if(xLen >= yLen && xLen >= zLen)
+            {
+                const float mid = midPoint(full.min.x, full.max.x);
+                leftMax.x = mid;
+                rightMin.x = mid;
+            }
+            else if(yLen >= xLen && yLen >= zLen)
+            {
+                const float mid = midPoint(full.min.y, full.max.y);
+                leftMax.y = mid;
+                rightMin.y = mid;
+            }
+            else
+            {
+                const float mid = midPoint(full.min.z, full.max.z);
+                leftMax.z = mid;
+                rightMin.z = mid;
+            }
+
+            nodes[left(index)].volume = AABB(full.min, leftMax);
+            nodes[right(index)].volume = AABB(rightMin, full.max);
         };
 
         for(uint32_t i = 0; i < levelCount - 1; i++)
