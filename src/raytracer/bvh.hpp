@@ -11,6 +11,7 @@
 #include <limits>
 #include <stdexcept>
 #include <array>
+#include <algorithm>
 
 namespace CL
 {
@@ -21,18 +22,77 @@ namespace CL
         AABB(const clm::vec3 &min, const clm::vec3 &max) : min(min), max(max) {}
         AABB() = default;
 
-        bool contains(const clm::vec3 &point) const
+        bool intersectsTriangle(const std::array<clm::vec3, 3> &triangle) const
         {
-            return point.x >= min.x && point.y >= min.y && point.z >= min.z &&
-                   point.x <= max.x && point.y <= max.y && point.z <= max.z;
+            const clm::vec3 boxCenter = (min + max) * 0.5f;
+            const clm::vec3 halfExtents = (max - min) * 0.5f;
+
+            const clm::vec3 v0 = triangle[0] - boxCenter;
+            const clm::vec3 v1 = triangle[1] - boxCenter;
+            const clm::vec3 v2 = triangle[2] - boxCenter;
+
+            if (std::min({v0.x, v1.x, v2.x}) > halfExtents.x || std::max({v0.x, v1.x, v2.x}) < -halfExtents.x)
+                return false;
+            if (std::min({v0.y, v1.y, v2.y}) > halfExtents.y || std::max({v0.y, v1.y, v2.y}) < -halfExtents.y)
+                return false;
+            if (std::min({v0.z, v1.z, v2.z}) > halfExtents.z || std::max({v0.z, v1.z, v2.z}) < -halfExtents.z)
+                return false;
+
+            const clm::vec3 edge0 = v1 - v0;
+            const clm::vec3 edge1 = v2 - v1;
+            const clm::vec3 edge2 = v0 - v2;
+
+            {
+                const clm::vec3 normal = edge0.cross(edge1);
+                const float boxRadius =
+                    halfExtents.x * std::abs(normal.x) +
+                    halfExtents.y * std::abs(normal.y) +
+                    halfExtents.z * std::abs(normal.z);
+                if (std::abs(normal.dot(v0)) > boxRadius)
+                    return false;
+            }
+
+            const clm::vec3 edges[3] = {edge0, edge1, edge2};
+            const clm::vec3 boxAxes[3] = {
+                clm::vec3(1.0f, 0.0f, 0.0f),
+                clm::vec3(0.0f, 1.0f, 0.0f),
+                clm::vec3(0.0f, 0.0f, 1.0f)};
+
+            for (const clm::vec3 &edge : edges)
+            {
+                for (const clm::vec3 &boxAxis : boxAxes)
+                {
+                    const clm::vec3 axis = edge.cross(boxAxis);
+
+                    const float projection0 = axis.dot(v0);
+                    const float projection1 = axis.dot(v1);
+                    const float projection2 = axis.dot(v2);
+
+                    const float triangleMin = std::min({projection0, projection1, projection2});
+                    const float triangleMax = std::max({projection0, projection1, projection2});
+
+                    const float boxRadius =
+                        halfExtents.x * std::abs(axis.x) +
+                        halfExtents.y * std::abs(axis.y) +
+                        halfExtents.z * std::abs(axis.z);
+
+                    if (triangleMin > boxRadius || triangleMax < -boxRadius)
+                        return false;
+                }
+            }
+
+            return true;
         }
 
-        bool intersects(const clm::vec3 &origin, const clm::vec3 &invDir) const
+        bool intersectsRay(const clm::vec3 &origin, const clm::vec3 &invDir) const
         {
+            float tMin = std::numeric_limits<float>::lowest();
+            float tMax = std::numeric_limits<float>::max();
+
             float tx1 = (min.x - origin.x) * invDir.x;
             float tx2 = (max.x - origin.x) * invDir.x;
-            float tMin = std::min(tx1, tx2);
-            float tMax = std::max(tx1, tx2);
+            tMin = std::max(tMin, std::min(tx1, tx2));
+            tMax = std::min(tMax, std::max(tx1, tx2));
 
             float ty1 = (min.y - origin.y) * invDir.y;
             float ty2 = (max.y - origin.y) * invDir.y;
@@ -80,6 +140,8 @@ namespace CL
         clm::vec3 min(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
         clm::vec3 max(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
 
+        static constexpr float EPSILON = 1e-4f;
+
         for (const Model &model : models)
         {
             clm::mat4 mat = model.transform.mat();
@@ -89,19 +151,19 @@ namespace CL
                 {
                     clm::vec3 world = mat * v.pos;
 
-                    if (min.x > world.x)
-                        min.x = world.x;
-                    if (min.y > world.y)
-                        min.y = world.y;
-                    if (min.z > world.z)
-                        min.z = world.z;
+                    if (min.x > world.x - EPSILON)
+                        min.x = world.x - EPSILON;
+                    if (min.y > world.y - EPSILON)
+                        min.y = world.y - EPSILON;
+                    if (min.z > world.z - EPSILON)
+                        min.z = world.z - EPSILON;
 
-                    if (max.x < world.x)
-                        max.x = world.x;
-                    if (max.y < world.y)
-                        max.y = world.y;
-                    if (max.z < world.z)
-                        max.z = world.z;
+                    if (max.x < world.x + EPSILON)
+                        max.x = world.x + EPSILON;
+                    if (max.y < world.y + EPSILON)
+                        max.y = world.y + EPSILON;
+                    if (max.z < world.z + EPSILON)
+                        max.z = world.z + EPSILON;
                 }
             }
         }
@@ -176,12 +238,12 @@ namespace CL
                 return;
             }
 
-            if (bvh.nodes[left(i)].volume.contains(pts[0]) || bvh.nodes[left(i)].volume.contains(pts[1]) || bvh.nodes[left(i)].volume.contains(pts[2]))
+            if (bvh.nodes[left(i)].volume.intersectsTriangle(pts))
             {
                 self(self, pts, materialIndex, left(i));
             }
 
-            if (bvh.nodes[right(i)].volume.contains(pts[0]) || bvh.nodes[right(i)].volume.contains(pts[1]) || bvh.nodes[right(i)].volume.contains(pts[2]))
+            if (bvh.nodes[right(i)].volume.intersectsTriangle(pts))
             {
                 self(self, pts, materialIndex, right(i));
             }

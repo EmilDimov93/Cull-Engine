@@ -65,7 +65,7 @@ namespace CL
         {
             uint32_t index = stack[--stackPointer];
 
-            if (!nodes[index].volume.intersects(origin, invDir))
+            if (!nodes[index].volume.intersectsRay(origin, invDir))
                 continue;
 
             uint32_t leftIndex = 2 * index + 1;
@@ -233,7 +233,7 @@ namespace CL
             for (std::thread &worker : workers)
                 worker.join();
         }
-
+        return;//
         {
             std::ofstream file("build/result.ppm", std::ios::binary);
 
