@@ -130,10 +130,10 @@ namespace CL
         std::vector<Material> materials;
     };
 
-    BVH constructBVH(const std::vector<Model> &models, uint32_t levelCount)
+    BVH constructBVH(const std::vector<Model> &models, uint32_t depth)
     {
-        if (levelCount == 0)
-            throw std::runtime_error("Invalid BVH level count");
+        if (depth == 0)
+            throw std::runtime_error("Invalid BVH depth");
 
         BVH bvh;
 
@@ -168,7 +168,7 @@ namespace CL
             }
         }
 
-        bvh.nodes.resize((1u << levelCount) - 1);
+        bvh.nodes.resize((1u << depth) - 1);
 
         bvh.nodes[0].volume = AABB(min, max);
 
@@ -221,7 +221,7 @@ namespace CL
             bvh.nodes[right(index)].volume = AABB(rightMin, full.max);
         };
 
-        for (uint32_t i = 0; i < levelCount - 1; i++)
+        for (uint32_t i = 0; i < depth - 1; i++)
         {
             for (uint32_t j = 0; j < (1u << i); j++)
             {

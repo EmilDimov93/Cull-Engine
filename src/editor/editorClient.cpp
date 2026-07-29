@@ -135,7 +135,10 @@ namespace CL
             }
 
             if (window.isKeyPressed(GLFW_KEY_R))
-                renderSceneToPPM(resultImageSize, scene, FOV, vignetteStrength, bvhLevelCount);
+            {
+                glfwSetWindowTitle(window, ("Cull Engine | Rendering..."));
+                renderSceneToPPM(resultImageSize, scene, FOV, vignetteStrength, depth);
+            }
 
             dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
             glfwSetWindowTitle(window, ("Cull Engine - Editor | " + std::to_string(int(1000.f / dt)) + " FPS").c_str());

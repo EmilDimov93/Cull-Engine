@@ -23,6 +23,7 @@ A CPU rendering engine pairing a real-time scene editor with a multi-threaded of
 | Move camera | `W` `A` `S` `D` |
 | Rotate camera | Arrow keys |
 | Render to *.ppm* | `R` |
+| View solid triangles | Hold `E` |
 | Select model | Left mouse button |
 | Use gizmo | Select model, drag arrows |
 | Change gizmo mode | `G` |

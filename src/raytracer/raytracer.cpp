@@ -8,7 +8,7 @@
 #include <array>
 
 #include "bvh.hpp"
-
+#include <iostream>
 namespace CL
 {
     [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
@@ -169,11 +169,11 @@ namespace CL
         }
     }
 
-    void renderSceneToPPM(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhLevelCount)
+    void renderSceneToPPM(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth)
     {
         std::vector<uint8_t> image(imageSize.x * imageSize.y * 3);
 
-        BVH bvh = constructBVH(scene.models, bvhLevelCount);
+        BVH bvh = constructBVH(scene.models, bvhDepth);
 
         {
             const unsigned int threadCount = std::max(1u, std::thread::hardware_concurrency());
@@ -233,7 +233,7 @@ namespace CL
             for (std::thread &worker : workers)
                 worker.join();
         }
-        return;//
+
         {
             std::ofstream file("build/result.ppm", std::ios::binary);
 
