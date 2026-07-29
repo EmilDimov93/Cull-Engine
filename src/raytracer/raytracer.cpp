@@ -215,11 +215,11 @@ namespace CL
                             castRayBVH(bvh, intersectionPoint, scene.surfaceToSunDir, &hasHit, nullptr, nullptr, nullptr);
                             if (hasHit)
                             {
-                                pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 1.f - clm::signedToUnitRange(normal.dot(scene.surfaceToSunDir))).color;
+                                pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 0.5f).color;
                             }
                             else
                             {
-                                pixelColor = material.color;
+                                pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 1.f - clm::signedToUnitRange(normal.dot(scene.surfaceToSunDir))).color;
                             }
                         }
                         placePixel3c(pixelColor * vignette, pixelX, pixelY, image, imageSize.x);
