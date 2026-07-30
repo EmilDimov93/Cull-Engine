@@ -63,9 +63,9 @@ namespace CL
                 else if (line.starts_with("d ") && !currentMat.empty())
                 {
                     std::stringstream ss(line.substr(2));
-                    float dissolve = 1.0f;
+                    float dissolve;
                     ss >> dissolve;
-                    materials[currentMat].color.w = dissolve;
+                    materials[currentMat].color.w = dissolve * 255.f;
                 }
             }
         };

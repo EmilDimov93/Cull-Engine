@@ -250,7 +250,7 @@ namespace CL
         };
 
         if (originClip.w > 0.f && destClip.w > 0.f)
-            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, colorAttachmentMain.data(), nullptr, window.size, Material({255.f, 255.f, 0.f}), 1.f);
+            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, colorAttachmentMain.data(), nullptr, window.size, Material({255.f, 255.f, 0.f, 255.f}), 1.f);
 
         drawMarker(originScreen, originClip.w, {255.f, 0.f, 0.f});
         drawMarker(destScreen, destClip.w, (hitModel == INVALID_INDEX ? clm::vec3(255.f, 255.f, 0.f) : clm::vec3(0.f, 255.f, 0.f)));

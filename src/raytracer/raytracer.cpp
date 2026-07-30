@@ -8,7 +8,7 @@
 #include <array>
 
 #include "bvh.hpp"
-#include <iostream>
+
 namespace CL
 {
     [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
@@ -102,10 +102,10 @@ namespace CL
                     {
                         closestDistance = distance;
 
-                        if(outHasHit)
+                        if (outHasHit)
                             *outHasHit = true;
 
-                        if(outMaterial)
+                        if (outMaterial)
                             *outMaterial = bvh.materials[bvh.nodes[leave].triangles[i].material];
 
                         if (outNormal)
@@ -207,7 +207,34 @@ namespace CL
                         clm::vec3 intersectionPoint;
                         bool hasHit = false;
 
-                        castRayBVH(bvh, scene.camera.getPos(), rayDirection, &hasHit, &material, &normal, &intersectionPoint);
+                        clm::vec3 rayOrigin = scene.camera.getPos();
+                        clm::vec4 accumulatedColor(0.f, 0.f, 0.f, 0.f);
+                        static constexpr uint32_t MAX_RAYS_PER_PIXEL = 20;
+                        for (uint32_t i = 0; i < MAX_RAYS_PER_PIXEL; i++)
+                        {
+                            castRayBVH(bvh, rayOrigin, rayDirection, &hasHit, &material, &normal, &intersectionPoint);
+
+                            if (!hasHit)
+                            {
+                                pixelColor = accumulatedColor * accumulatedColor.w + pixelColor * (1.f - accumulatedColor.w);
+                                break;
+                            }
+                            else
+                            {
+                                if (material.color.w > 254.f)
+                                {
+                                    pixelColor = accumulatedColor * (accumulatedColor.w / 255.f) + material.color * (1.f - (accumulatedColor.w / 255.f));
+                                    break;
+                                }
+                                else
+                                {
+                                    accumulatedColor = accumulatedColor + material.color;
+                                    accumulatedColor = clm::clamp(accumulatedColor, 0.f, 255.f);
+                                }
+                            }
+
+                            rayOrigin = intersectionPoint + rayDirection * 1e-4f;
+                        }
 
                         if (hasHit)
                         {
@@ -222,6 +249,7 @@ namespace CL
                                 pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 1.f - clm::signedToUnitRange(normal.dot(scene.surfaceToSunDir))).color;
                             }
                         }
+                        
                         placePixel3c(pixelColor * vignette, pixelX, pixelY, image, imageSize.x);
                     }
                 }
