@@ -26,8 +26,10 @@ namespace CL
     struct Material
     {
         clm::vec4 color;
+        float roughness;
+        float metallic;
 
-        constexpr Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}) : color(color) {}
+        constexpr Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}, float roughness = 0.5f, float metallic = 0.f) : color(color), roughness(roughness), metallic(metallic) {}
 
         constexpr Material tinted(clm::vec4 tint, float tintFactor) const
         {

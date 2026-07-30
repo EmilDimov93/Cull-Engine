@@ -63,9 +63,23 @@ namespace CL
                 else if (line.starts_with("d ") && !currentMat.empty())
                 {
                     std::stringstream ss(line.substr(2));
-                    float dissolve;
+                    float dissolve = 1.f;
                     ss >> dissolve;
                     materials[currentMat].color.w = dissolve * 255.f;
+                }
+                else if (line.starts_with("Pr ") && !currentMat.empty())
+                {
+                    std::stringstream ss(line.substr(2));
+                    float roughness = 0.5f;
+                    ss >> roughness;
+                    materials[currentMat].roughness = roughness;
+                }
+                else if (line.starts_with("Pm ") && !currentMat.empty())
+                {
+                    std::stringstream ss(line.substr(2));
+                    float metallic = 0.f;
+                    ss >> metallic;
+                    materials[currentMat].metallic = metallic;
                 }
             }
         };
