@@ -42,6 +42,11 @@ namespace clm
             return vec3(x * other.x, y * other.y, z * other.z);
         }
 
+        [[nodiscard]] constexpr vec3 operator/(const vec3 &other) const
+        {
+            return vec3(x / other.x, y / other.y, z / other.z);
+        }
+
         [[nodiscard]] constexpr vec3 operator+(const vec3 &other) const
         {
             return vec3(x + other.x, y + other.y, z + other.z);
@@ -62,6 +67,11 @@ namespace clm
         [[nodiscard]] vec3 constexpr operator*(float scalar) const
         {
             return vec3(x * scalar, y * scalar, z * scalar);
+        }
+
+        [[nodiscard]] vec3 constexpr operator/(float scalar) const
+        {
+            return vec3(x / scalar, y / scalar, z / scalar);
         }
 
         [[nodiscard]] constexpr float dot(vec3 other) const
