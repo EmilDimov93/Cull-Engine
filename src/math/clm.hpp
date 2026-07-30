@@ -119,6 +119,11 @@ namespace clm
         {
             return vec4(x / scalar, y / scalar, z / scalar, w / scalar);
         }
+
+        [[nodiscard]] constexpr vec3 xyz() const
+        {
+            return vec3(x, y, z);
+        }
     };
 
     [[nodiscard]] constexpr float clamp(float value, float min, float max)

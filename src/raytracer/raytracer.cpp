@@ -221,19 +221,24 @@ namespace CL
                             }
                             else
                             {
+                                const float accumulatedAlpha01 = accumulatedColor.w / 255.f;
                                 if (material.color.w > 254.f)
                                 {
-                                    pixelColor = accumulatedColor * (accumulatedColor.w / 255.f) + material.color * (1.f - (accumulatedColor.w / 255.f));
+                                    pixelColor = accumulatedColor * accumulatedAlpha01 + material.color * (1.f - accumulatedAlpha01);
                                     break;
                                 }
                                 else
                                 {
-                                    accumulatedColor = accumulatedColor + material.color;
+                                    const float materialAlpha01 = material.color.w / 255.f;
+
+                                    const float totalAlpha = accumulatedAlpha01 + materialAlpha01 * (1.f - accumulatedAlpha01);
+                                    accumulatedColor = clm::vec4(clm::vec3(accumulatedColor.xyz() * accumulatedAlpha01 + material.color.xyz() * materialAlpha01 * (1.0f - accumulatedAlpha01)) / totalAlpha, totalAlpha);
+
                                     accumulatedColor = clm::clamp(accumulatedColor, 0.f, 255.f);
                                 }
                             }
 
-                            rayOrigin = intersectionPoint + rayDirection * 1e-4f;
+                            rayOrigin = intersectionPoint + rayDirection * 1e-6f;
                         }
 
                         if (hasHit)
@@ -249,7 +254,7 @@ namespace CL
                                 pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 1.f - clm::signedToUnitRange(normal.dot(scene.surfaceToSunDir))).color;
                             }
                         }
-                        
+
                         placePixel3c(pixelColor * vignette, pixelX, pixelY, image, imageSize.x);
                     }
                 }
