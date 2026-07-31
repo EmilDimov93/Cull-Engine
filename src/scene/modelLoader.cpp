@@ -15,7 +15,7 @@ namespace CL
     Model loadOBJ(const std::string &filePath)
     {
         std::string ext = std::filesystem::path(filePath).extension().string();
-        if(ext != ".obj")
+        if (ext != ".obj")
             throw std::runtime_error("File is not in .obj format: " + filePath);
 
         std::ifstream file(filePath);
@@ -23,6 +23,7 @@ namespace CL
             throw std::runtime_error("File not found: " + filePath);
 
         std::vector<clm::vec3> positions;
+        std::vector<clm::vec3> normals;
         std::unordered_map<std::string, Material> materials;
 
         uint32_t currentMaterialIndex = INVALID_INDEX;
@@ -69,14 +70,14 @@ namespace CL
                 }
                 else if (line.starts_with("Pr ") && !currentMat.empty())
                 {
-                    std::stringstream ss(line.substr(2));
+                    std::stringstream ss(line.substr(3));
                     float roughness = 0.5f;
                     ss >> roughness;
                     materials[currentMat].roughness = roughness;
                 }
                 else if (line.starts_with("Pm ") && !currentMat.empty())
                 {
-                    std::stringstream ss(line.substr(2));
+                    std::stringstream ss(line.substr(3));
                     float metallic = 0.f;
                     ss >> metallic;
                     materials[currentMat].metallic = metallic;
@@ -148,23 +149,45 @@ namespace CL
                 ss >> p.x >> p.y >> p.z;
                 positions.push_back(p);
             }
+            else if (line.starts_with("vn "))
+            {
+                clm::vec3 n;
+                std::stringstream ss(line.substr(3));
+                ss >> n.x >> n.y >> n.z;
+                normals.push_back(n);
+            }
             else if (line.starts_with("f "))
             {
                 std::stringstream ss(line.substr(2));
                 std::string a, b, c;
                 ss >> a >> b >> c;
 
-                auto parseIndex = [](const std::string &token) -> uint32_t
+                auto parseFaceVertex = [](const std::string &token, uint32_t &positionIndex, uint32_t &normalIndex)
                 {
-                    return static_cast<uint32_t>(std::stoi(token.substr(0, token.find('/'))) - 1);
+                    normalIndex = INVALID_INDEX;
+
+                    size_t firstSlash = token.find('/');
+                    positionIndex = static_cast<uint32_t>(std::stoi(token.substr(0, firstSlash)) - 1);
+
+                    if (firstSlash == std::string::npos)
+                        return;
+
+                    size_t secondSlash = token.find('/', firstSlash + 1);
+                    if (secondSlash != std::string::npos && secondSlash + 1 < token.size())
+                        normalIndex = static_cast<uint32_t>(std::stoi(token.substr(secondSlash + 1)) - 1);
                 };
 
-                uint32_t parsed[3] = {parseIndex(a), parseIndex(b), parseIndex(c)};
-
-                for (auto &positionIndex : parsed)
+                std::string faceTokens[3] = {a, b, c};
+                for (const std::string &token : faceTokens)
                 {
+                    uint32_t positionIndex;
+                    uint32_t normalIndex;
+                    parseFaceVertex(token, positionIndex, normalIndex);
+
+                    clm::vec3 normal = (normalIndex != INVALID_INDEX) ? normals[normalIndex] : clm::vec3{0.f, 0.f, 0.f};
+
                     currentMeshIndices.push_back(static_cast<uint32_t>(currentMeshVertices.size()));
-                    currentMeshVertices.emplace_back(positions[positionIndex]);
+                    currentMeshVertices.emplace_back(positions[positionIndex], normal);
                 }
             }
             else if (line.starts_with("o "))

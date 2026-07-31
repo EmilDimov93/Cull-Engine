@@ -19,8 +19,10 @@ namespace CL
     struct Vertex
     {
         clm::vec3 pos;
+        clm::vec3 normal;
 
-        constexpr Vertex(clm::vec3 pos) : pos(pos) {}
+        constexpr Vertex() = default;
+        constexpr Vertex(clm::vec3 pos, clm::vec3 normal) : pos(pos), normal(normal) {}
     };
 
     struct Material
