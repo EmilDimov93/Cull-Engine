@@ -28,7 +28,7 @@ int main()
 
         CL::Editor editor(scene, {1000u, 1000u});
 
-        editor.setVignetteStrength(0.8f);
+        editor.setVignetteStrength(0.5f);
         editor.setResultImageSize({1000u, 1000u});
 
         editor.run();

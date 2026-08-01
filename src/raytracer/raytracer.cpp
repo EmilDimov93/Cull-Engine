@@ -83,6 +83,27 @@ namespace CL
         return hitLeaves;
     }
 
+    clm::vec3 computeBarycentric(const std::array<Vertex, 3> &vertices, clm::vec3 p)
+    {
+        clm::vec3 edge1 = vertices[1].pos - vertices[0].pos;
+        clm::vec3 edge2 = vertices[2].pos - vertices[0].pos;
+        clm::vec3 edge3 = p - vertices[0].pos;
+
+        float dot11 = edge1.dot(edge1);
+        float dot12 = edge1.dot(edge2);
+        float dot22 = edge2.dot(edge2);
+        float dot31 = edge3.dot(edge1);
+        float dot32 = edge3.dot(edge2);
+
+        float denominator = dot11 * dot22 - dot12 * dot12;
+
+        float weightB = (dot22 * dot31 - dot12 * dot32) / denominator;
+        float weightC = (dot11 * dot32 - dot12 * dot31) / denominator;
+        float weightA = 1.0f - weightB - weightC;
+
+        return clm::vec3(weightA, weightB, weightC);
+    }
+
     void castRayBVH(const BVH &bvh, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, bool *outHasHit, Material *outMaterial, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint)
     {
         std::vector<uint32_t> hitLeaves = traverseBVH(bvh.nodes, rayOrigin, clm::vec3(1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z));
@@ -93,9 +114,9 @@ namespace CL
         {
             for (uint32_t i = 0; i < bvh.nodes[leave].triangles.size(); i++)
             {
-                const std::array<clm::vec3, 3> &pts = bvh.nodes[leave].triangles[i].pts;
+                const std::array<Vertex, 3> &vertices = bvh.nodes[leave].triangles[i].vertices;
                 clm::vec3 intersectionPoint;
-                if (RayIntersectsTriangle(rayOrigin, rayDirection, pts, intersectionPoint))
+                if (RayIntersectsTriangle(rayOrigin, rayDirection, {vertices[0].pos, vertices[1].pos, vertices[2].pos}, intersectionPoint))
                 {
                     const float distance = (intersectionPoint - rayOrigin).length();
                     if (distance < closestDistance)
@@ -110,9 +131,9 @@ namespace CL
 
                         if (outNormal)
                         {
-                            clm::vec3 edge1 = pts[1] - pts[0];
-                            clm::vec3 edge2 = pts[2] - pts[0];
-                            *outNormal = edge1.cross(edge2).normalized();
+                            clm::vec3 barycentric = computeBarycentric(vertices, intersectionPoint);
+                            clm::vec3 smoothNormal = vertices[0].normal * barycentric.x + vertices[1].normal * barycentric.y + vertices[2].normal * barycentric.z;
+                            *outNormal = smoothNormal.normalized();
                         }
 
                         if (outIntersectionPoint)
@@ -196,7 +217,7 @@ namespace CL
 
                         const clm::vec3 rayDirection = (basis.right * ndcX + basis.up * ndcY + basis.forward).normalized();
 
-                        clm::vec4 pixelColor(scene.clearColor, 1.f);
+                        clm::vec4 pixelColor(scene.clearColor, 255.f);
 
                         const float vignetteX = static_cast<float>(pixelX > imageSize.x / 2 ? imageSize.x - pixelX : pixelX) / (imageSize.x / 2);
                         const float vignetteY = static_cast<float>(pixelY > imageSize.y / 2 ? imageSize.y - pixelY : pixelY) / (imageSize.y / 2);

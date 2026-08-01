@@ -22,14 +22,14 @@ namespace CL
         AABB(const clm::vec3 &min, const clm::vec3 &max) : min(min), max(max) {}
         AABB() = default;
 
-        bool intersectsTriangle(const std::array<clm::vec3, 3> &triangle) const
+        bool intersectsTriangle(const std::array<Vertex, 3> &triangle) const
         {
             const clm::vec3 boxCenter = (min + max) * 0.5f;
             const clm::vec3 halfExtents = (max - min) * 0.5f;
 
-            const clm::vec3 v0 = triangle[0] - boxCenter;
-            const clm::vec3 v1 = triangle[1] - boxCenter;
-            const clm::vec3 v2 = triangle[2] - boxCenter;
+            const clm::vec3 v0 = triangle[0].pos - boxCenter;
+            const clm::vec3 v1 = triangle[1].pos - boxCenter;
+            const clm::vec3 v2 = triangle[2].pos - boxCenter;
 
             if (std::min({v0.x, v1.x, v2.x}) > halfExtents.x || std::max({v0.x, v1.x, v2.x}) < -halfExtents.x)
                 return false;
@@ -110,11 +110,11 @@ namespace CL
 
     struct Triangle
     {
-        std::array<clm::vec3, 3> pts;
+        std::array<Vertex, 3> vertices;
         uint32_t material;
 
         Triangle() = default;
-        Triangle(std::array<clm::vec3, 3> pts, uint32_t material) : pts(pts), material(material) {}
+        Triangle(std::array<Vertex, 3> vertices, uint32_t material) : vertices(vertices), material(material) {}
     };
 
     struct Node
@@ -229,23 +229,23 @@ namespace CL
             }
         }
 
-        auto addTriangle = [&](auto &&self, const std::array<clm::vec3, 3> &pts, uint32_t materialIndex, uint32_t i)
+        auto addTriangle = [&](auto &&self, const std::array<Vertex, 3> &vertices, uint32_t materialIndex, uint32_t i)
         {
             if (left(i) > bvh.nodes.size() - 1)
             {
-                bvh.nodes[i].triangles.emplace_back(pts, materialIndex);
+                bvh.nodes[i].triangles.emplace_back(vertices, materialIndex);
 
                 return;
             }
 
-            if (bvh.nodes[left(i)].volume.intersectsTriangle(pts))
+            if (bvh.nodes[left(i)].volume.intersectsTriangle(vertices))
             {
-                self(self, pts, materialIndex, left(i));
+                self(self, vertices, materialIndex, left(i));
             }
 
-            if (bvh.nodes[right(i)].volume.intersectsTriangle(pts))
+            if (bvh.nodes[right(i)].volume.intersectsTriangle(vertices))
             {
-                self(self, pts, materialIndex, right(i));
+                self(self, vertices, materialIndex, right(i));
             }
         };
 
@@ -255,13 +255,14 @@ namespace CL
             clm::mat4 mat = model.transform.mat();
             for (const Mesh &mesh : model.meshes)
             {
-                std::array<clm::vec3, 3> pts;
+                std::array<Vertex, 3> vertices;
                 for (uint32_t i = 0; i < mesh.indices.size(); i++)
                 {
-                    pts[i % 3] = mat * mesh.vertices[mesh.indices[i]].pos;
+                    vertices[i % 3].pos = mat * mesh.vertices[mesh.indices[i]].pos;
+                    vertices[i % 3].normal = mesh.vertices[mesh.indices[i]].normal;
                     if (i % 3 == 2)
                     {
-                        addTriangle(addTriangle, pts, startMaterialIndex + mesh.materialIndex, 0);
+                        addTriangle(addTriangle, vertices, startMaterialIndex + mesh.materialIndex, 0);
                     }
                 }
             }
