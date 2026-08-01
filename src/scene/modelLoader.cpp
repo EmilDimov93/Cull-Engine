@@ -52,7 +52,7 @@ namespace CL
                 {
                     currentMat = line.substr(7);
                     trim(currentMat);
-                    materials[currentMat].color.w = 1.0f;
+                    materials[currentMat].color.w = 255.0f;
                 }
                 else if (line.starts_with("Kd ") && !currentMat.empty())
                 {
