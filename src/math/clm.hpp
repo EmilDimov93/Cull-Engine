@@ -105,9 +105,24 @@ namespace clm
         constexpr vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) : x(x), y(y), z(z), w(w) {}
         constexpr vec4(vec3 v3, float w) : x(v3.x), y(v3.y), z(v3.z), w(w) {}
 
+        [[nodiscard]] constexpr vec4 operator*(const vec4 &other) const
+        {
+            return vec4(x * other.x, y * other.y, z * other.z, w * other.w);
+        }
+
+        [[nodiscard]] constexpr vec4 operator/(const vec4 &other) const
+        {
+            return vec4(x / other.x, y / other.y, z / other.z, w * other.w);
+        }
+
         [[nodiscard]] constexpr vec4 operator+(const vec4 &other) const
         {
             return vec4(x + other.x, y + other.y, z + other.z, w + other.w);
+        }
+
+        [[nodiscard]] constexpr vec4 operator-(const vec4 &other) const
+        {
+            return vec4(x - other.x, y - other.y, z - other.z, w - other.w);
         }
 
         [[nodiscard]] constexpr vec4 operator*(float scalar) const

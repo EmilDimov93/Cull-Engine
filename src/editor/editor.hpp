@@ -90,6 +90,6 @@ namespace CL
         // Ray-Tracer
         clm::uvec2 resultImageSize = {100u, 100u};
         float vignetteStrength = 0.f;
-        uint32_t depth = 10u;
+        uint32_t bvhDepth = 10u;
     };
 }
