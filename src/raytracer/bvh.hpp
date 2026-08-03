@@ -259,7 +259,7 @@ namespace CL
                 for (uint32_t i = 0; i < mesh.indices.size(); i++)
                 {
                     vertices[i % 3].pos = mat * mesh.vertices[mesh.indices[i]].pos;
-                    vertices[i % 3].normal = mesh.vertices[mesh.indices[i]].normal;
+                    vertices[i % 3].normal = model.transform.rot * mesh.vertices[mesh.indices[i]].normal;
                     if (i % 3 == 2)
                     {
                         addTriangle(addTriangle, vertices, startMaterialIndex + mesh.materialIndex, 0);

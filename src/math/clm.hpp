@@ -316,6 +316,16 @@ namespace clm
                               A.x * B.y + -A.y * B.x + A.z * B.w + A.w * B.z);
         }
 
+        [[nodiscard]] constexpr vec3 operator*(const vec3 &other) const
+        {
+            return other + xyz().cross(xyz().cross(other) + other * w) * 2.f;
+        }
+
+        [[nodiscard]] constexpr vec3 xyz() const
+        {
+            return vec3(x, y, z);
+        }
+
         [[nodiscard]] constexpr quaternion normalized() const
         {
             const float length = std::sqrt(w * w + x * x + y * y + z * z);
