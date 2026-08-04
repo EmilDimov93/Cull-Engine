@@ -192,7 +192,7 @@ namespace CL
             for (const Mesh &mesh : scene.models[modelIndex].meshes)
             {
                 const Material &material = scene.models[modelIndex].materials[mesh.materialIndex];
-                const Material materialTinted = (modelIndex == selectedModelIndex ? material.tinted(SELECTED_MODEL_TINT, 0.2f) : material);
+                const Material materialTinted = (modelIndex == selectedModelIndex ? material.tinted(clm::vec4(255.f, 255.f, 0.f, 255.f), 0.2f) : material);
                 drawMesh(mesh, materialTinted, modelMat, depthAttachmentMain, (editorViewMode == EDITOR_VIEW_SOLID), true);
             }
         }
@@ -205,9 +205,9 @@ namespace CL
 
             for (const Mesh &mesh : gizmoArrow.meshes)
             {
-                drawMesh(mesh, gizmoArrowXMaterial, gizmoArrowXModelMat, depthAttachmentGizmo, true, false);
-                drawMesh(mesh, gizmoArrowYMaterial, gizmoArrowYModelMat, depthAttachmentGizmo, true, false);
-                drawMesh(mesh, gizmoArrowZMaterial, gizmoArrowZModelMat, depthAttachmentGizmo, true, false);
+                drawMesh(mesh, Material({255.f, 0.f, 0.f, 255.f}), gizmoArrowXModelMat, depthAttachmentGizmo, true, false);
+                drawMesh(mesh, Material({0.f, 255.f, 0.f, 255.f}), gizmoArrowYModelMat, depthAttachmentGizmo, true, false);
+                drawMesh(mesh, Material({0.f, 0.f, 255.f, 255.f}), gizmoArrowZModelMat, depthAttachmentGizmo, true, false);
             }
         }
     }

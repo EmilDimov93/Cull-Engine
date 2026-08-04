@@ -38,12 +38,6 @@ namespace CL
 
         Window window;
 
-        static constexpr clm::vec4 SELECTED_MODEL_TINT = clm::vec4(255.f, 255.f, 0.f, 255.f);
-
-        static constexpr Material gizmoArrowXMaterial = Material({255.f, 0.f, 0.f, 255.f});
-        static constexpr Material gizmoArrowYMaterial = Material({0.f, 255.f, 0.f, 255.f});
-        static constexpr Material gizmoArrowZMaterial = Material({0.f, 0.f, 255.f, 255.f});
-
         float dt = 0.f;
 
         clm::mat4 projectionMat;
