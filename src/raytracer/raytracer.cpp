@@ -190,7 +190,7 @@ namespace CL
         }
     }
 
-    void renderSceneToPPM(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth)
+    std::vector<uint8_t> renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth)
     {
         std::vector<uint8_t> image(imageSize.x * imageSize.y * 3);
 
@@ -288,20 +288,24 @@ namespace CL
                 worker.join();
         }
 
-        {
-            std::ofstream file("build/result.ppm", std::ios::binary);
+        return image;
+    }
 
-            if (!file)
-                throw std::runtime_error("Failed to open build/result.ppm");
+    void saveImageToPPM(const std::vector<uint8_t> &image, const clm::uvec2 &size, const std::string &filePath, bool shouldOpen)
+    {
+        std::ofstream file(filePath, std::ios::binary);
 
-            file << "P6\n"
-                 << imageSize.x << ' ' << imageSize.y << "\n255\n";
+        if (!file)
+            throw std::runtime_error("Failed to open .ppm file");
 
-            file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(imageSize.x) * static_cast<std::streamsize>(imageSize.y) * 3);
+        file << "P6\n"
+             << size.x << ' ' << size.y << "\n255\n";
 
-            file.close();
+        file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(size.x) * static_cast<std::streamsize>(size.y) * 3);
 
+        file.close();
+
+        if(shouldOpen)
             std::system("start build\\result.ppm");
-        }
     }
 }

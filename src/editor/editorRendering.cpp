@@ -174,7 +174,7 @@ namespace CL
         }
     }
 
-    void Editor::renderImageRasterized()
+    void Editor::renderSceneRasterized()
     {
         std::fill(depthAttachmentMain.begin(), depthAttachmentMain.end(), std::numeric_limits<float>::infinity());
         std::fill(depthAttachmentGizmo.begin(), depthAttachmentGizmo.end(), std::numeric_limits<float>::infinity());

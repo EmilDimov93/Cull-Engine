@@ -75,7 +75,7 @@ namespace CL
             EDITOR_VIEW_SOLID
         } editorViewMode = EDITOR_VIEW_WIREFRAME;
 
-        void renderImageRasterized();
+        void renderSceneRasterized();
 
         uint32_t findHoveredModel(clm::ivec2 mousePos);
         void drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, std::vector<float> &depthAttachment, bool isSolid, bool hasShading);

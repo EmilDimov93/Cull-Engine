@@ -40,7 +40,7 @@ namespace CL
                                 (window.isKeyPressed(GLFW_KEY_DOWN) - window.isKeyPressed(GLFW_KEY_UP)),
                                 dt);
 
-            renderImageRasterized();
+            renderSceneRasterized();
 
             glDrawPixels(static_cast<GLsizei>(window.size.x), static_cast<GLsizei>(window.size.y), GL_RGB, GL_UNSIGNED_BYTE, colorAttachmentMain.data());
             glfwSwapBuffers(window);
@@ -137,7 +137,7 @@ namespace CL
             if (window.isKeyPressed(GLFW_KEY_R))
             {
                 glfwSetWindowTitle(window, ("Cull Engine | Rendering..."));
-                renderSceneToPPM(resultImageSize, scene, FOV, vignetteStrength, bvhDepth);
+                saveImageToPPM(renderSceneRayTraced(resultImageSize, scene, FOV, vignetteStrength, bvhDepth), resultImageSize, "build/result.ppm", true);
             }
 
             dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
