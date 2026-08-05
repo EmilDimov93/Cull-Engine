@@ -191,7 +191,7 @@ namespace CL
             {
                 const Material &material = scene.models[modelIndex].materials[mesh.materialIndex];
                 const Material materialTinted = (modelIndex == selectedModelIndex ? material.tinted(clm::vec4(255.f, 255.f, 0.f, 255.f), 0.2f) : material);
-                drawMesh(mesh, materialTinted, modelMat, depthAttMain, (editorViewMode == EDITOR_VIEW_SOLID), true);
+                drawMesh(mesh, materialTinted, modelMat, depthAttMain, (viewMode == VIEW_MODE_SOLID), true);
             }
         }
 

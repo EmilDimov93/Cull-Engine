@@ -124,9 +124,9 @@ namespace CL
             prevMousePos = {static_cast<int32_t>(mouseX), static_cast<int32_t>(mouseY)};
 
             if (window.isKeyPressed(GLFW_KEY_E))
-                editorViewMode = EDITOR_VIEW_SOLID;
+                viewMode = VIEW_MODE_SOLID;
             else
-                editorViewMode = EDITOR_VIEW_WIREFRAME;
+                viewMode = VIEW_MODE_WIREFRAME;
 
             if (window.isKeyPressed(GLFW_KEY_DELETE) && (selectedModelIndex != INVALID_INDEX))
             {
@@ -141,7 +141,7 @@ namespace CL
             }
 
             dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());
-            glfwSetWindowTitle(window, ("Cull Engine - Editor | " + std::to_string(int(1000.f / dt)) + " FPS").c_str());
+            glfwSetWindowTitle(window, ("Cull Engine - Editor | View: " + ((viewMode == VIEW_MODE_WIREFRAME) ? std::string("wireframe") : std::string("solid")) + " | " + std::to_string(int(1000.f / dt)) + " FPS").c_str());
         }
     }
 

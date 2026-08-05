@@ -69,11 +69,11 @@ namespace CL
         bool wasGPressed = false;
         clm::ivec2 prevMousePos;
 
-        enum EditorViewMode
+        enum ViewMode
         {
-            EDITOR_VIEW_WIREFRAME,
-            EDITOR_VIEW_SOLID
-        } editorViewMode = EDITOR_VIEW_WIREFRAME;
+            VIEW_MODE_WIREFRAME,
+            VIEW_MODE_SOLID
+        } viewMode = VIEW_MODE_WIREFRAME;
 
         void renderSceneRasterized();
 
