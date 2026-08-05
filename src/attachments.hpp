@@ -13,9 +13,9 @@ namespace CL
     template <typename T>
     struct Attachment
     {
-    public:
         std::vector<T> image;
         clm::uvec2 size;
+        uint32_t channelCount;
 
         Attachment(clm::uvec2 size, uint32_t channelCount) : image(size.x * size.y * channelCount), size(size), channelCount(channelCount) {}
 
@@ -29,16 +29,21 @@ namespace CL
         {
             std::fill(image.begin(), image.end(), value);
         }
-
-        // place pixel
-
-    private:
-        uint32_t channelCount;
     };
 
     struct ColorAttachment : Attachment<uint8_t>
     {
         explicit ColorAttachment(clm::uvec2 size) : Attachment<uint8_t>(size, 3u) {}
+
+        inline constexpr void placePixel(uint32_t x, uint32_t y, clm::vec4 color)
+        {
+            if (x >= size.x || y >= image.size() / (size.x * channelCount))
+                return;
+
+            image[(y * size.x + x) * channelCount] = static_cast<uint8_t>(clm::clamp(color.x, 0.f, 255.f));
+            image[(y * size.x + x) * channelCount + 1] = static_cast<uint8_t>(clm::clamp(color.y, 0.f, 255.f));
+            image[(y * size.x + x) * channelCount + 2] = static_cast<uint8_t>(clm::clamp(color.z, 0.f, 255.f));
+        }
     };
 
     struct DepthAttachment : Attachment<float>
