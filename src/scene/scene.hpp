@@ -91,7 +91,7 @@ namespace CL
 
         void removeModel(uint32_t index)
         {
-            if(index > models.size() - 1)
+            if (index > models.size() - 1)
                 throw std::runtime_error("Invalid index");
             models.erase(models.begin() + index);
         }

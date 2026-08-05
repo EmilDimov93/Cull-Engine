@@ -6,6 +6,7 @@
 #include "../math/clm.hpp"
 
 #include "../scene/scene.hpp"
+#include "../attachments.hpp"
 
 #include "../raytracer/raytracer.hpp"
 
@@ -42,9 +43,9 @@ namespace CL
 
         clm::mat4 projectionMat;
 
-        std::vector<uint8_t> colorAttachmentMain;
-        std::vector<float> depthAttachmentMain;
-        std::vector<float> depthAttachmentGizmo;
+        ColorAttachment colorAttachmentMain;
+        DepthAttachment depthAttachmentMain;
+        DepthAttachment depthAttachmentGizmo;
 
         clm::ivec2 prevMousePos;
 
@@ -78,7 +79,7 @@ namespace CL
         void renderSceneRasterized();
 
         uint32_t findHoveredModel(clm::ivec2 mousePos);
-        void drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, std::vector<float> &depthAttachment, bool isSolid, bool hasShading);
+        void drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, DepthAttachment &depthAttachment, bool isSolid, bool hasShading);
         void debugRay(clm::vec3 origin, clm::vec3 dir);
 
         // Ray-Tracer
