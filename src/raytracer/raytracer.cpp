@@ -276,7 +276,7 @@ namespace CL
                             }
                         }
 
-                        colorAtt.placePixel(pixelX, pixelY, pixelColor * vignette);
+                        colorAtt.setPixel(pixelX, pixelY, pixelColor * vignette);
                     }
                 }
             };

@@ -8,7 +8,7 @@
 
 namespace CL
 {
-    Editor::Editor(const Scene &scene, clm::uvec2 windowSize) : window(windowSize), colorAttachmentMain(windowSize), depthAttachmentMain(windowSize), depthAttachmentGizmo(windowSize)
+    Editor::Editor(const Scene &scene, clm::uvec2 windowSize) : window(windowSize), colorAttMain(windowSize), depthAttMain(windowSize), depthAttGizmo(windowSize)
     {
         this->scene = scene;
 
@@ -27,9 +27,9 @@ namespace CL
             {
                 projectionMat = clm::mat4::perspective(FOV, window.aspectRatio, ZNEAR, ZFAR);
 
-                colorAttachmentMain.resize(window.size, 0u);
-                depthAttachmentMain.resize(window.size, std::numeric_limits<float>::infinity());
-                depthAttachmentGizmo.resize(window.size, std::numeric_limits<float>::infinity());
+                colorAttMain.resize(window.size, 0u);
+                depthAttMain.resize(window.size, std::numeric_limits<float>::infinity());
+                depthAttGizmo.resize(window.size, std::numeric_limits<float>::infinity());
 
                 window.hasResized = false;
             }
@@ -42,7 +42,7 @@ namespace CL
 
             renderSceneRasterized();
 
-            glDrawPixels(static_cast<GLsizei>(window.size.x), static_cast<GLsizei>(window.size.y), GL_RGB, GL_UNSIGNED_BYTE, colorAttachmentMain.image.data());
+            glDrawPixels(static_cast<GLsizei>(window.size.x), static_cast<GLsizei>(window.size.y), GL_RGB, GL_UNSIGNED_BYTE, colorAttMain.image.data());
             glfwSwapBuffers(window);
 
             double mouseX, mouseY;

@@ -6,6 +6,7 @@
 #include "math/clm.hpp"
 
 #include <vector>
+#include <limits>
 
 namespace CL
 {
@@ -35,7 +36,7 @@ namespace CL
     {
         explicit ColorAttachment(clm::uvec2 size) : Attachment<uint8_t>(size, 3u) {}
 
-        inline constexpr void placePixel(uint32_t x, uint32_t y, clm::vec4 color)
+        void setPixel(uint32_t x, uint32_t y, clm::vec4 color)
         {
             if (x >= size.x || y >= image.size() / (size.x * channelCount))
                 return;
@@ -49,5 +50,21 @@ namespace CL
     struct DepthAttachment : Attachment<float>
     {
         explicit DepthAttachment(clm::uvec2 size) : Attachment<float>(size, 1u) {}
+
+        void setPixel(uint32_t x, uint32_t y, float value)
+        {
+            if (x >= size.x || y >= image.size() / (size.x * channelCount))
+                return;
+
+            image[y * size.x + x] = value;
+        }
+
+        float getPixel(uint32_t x, uint32_t y)
+        {
+            if (x >= size.x || y >= image.size() / (size.x * channelCount))
+                return std::numeric_limits<float>::infinity();
+
+            return image[y * size.x + x];
+        }
     };
 }

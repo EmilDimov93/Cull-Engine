@@ -43,11 +43,9 @@ namespace CL
 
         clm::mat4 projectionMat;
 
-        ColorAttachment colorAttachmentMain;
-        DepthAttachment depthAttachmentMain;
-        DepthAttachment depthAttachmentGizmo;
-
-        clm::ivec2 prevMousePos;
+        ColorAttachment colorAttMain;
+        DepthAttachment depthAttMain;
+        DepthAttachment depthAttGizmo;
 
         uint32_t selectedModelIndex = INVALID_INDEX;
 
@@ -69,6 +67,7 @@ namespace CL
         } gizmoDrag = GIZMO_DRAG_NONE;
 
         bool wasGPressed = false;
+        clm::ivec2 prevMousePos;
 
         enum EditorViewMode
         {
@@ -79,7 +78,7 @@ namespace CL
         void renderSceneRasterized();
 
         uint32_t findHoveredModel(clm::ivec2 mousePos);
-        void drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, DepthAttachment &depthAttachment, bool isSolid, bool hasShading);
+        void drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, DepthAttachment &depthAtt, bool isSolid, bool hasShading);
         void debugRay(clm::vec3 origin, clm::vec3 dir);
 
         // Ray-Tracer

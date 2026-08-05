@@ -39,10 +39,10 @@ namespace CL
                     const float b2 = static_cast<float>(w2) / area;
                     const float depth = b0 * pts[0].z + b1 * pts[1].z + b2 * pts[2].z;
 
-                    if (depth < depthAtt.image[y * depthAtt.size.x + x])
+                    if (depth < depthAtt.getPixel(x, y))
                     {
-                        depthAtt.image[y * depthAtt.size.x + x] = depth;
-                        colorAtt.placePixel(x, y, material.color * shade);
+                        depthAtt.setPixel(x, y, depth);
+                        colorAtt.setPixel(x, y, material.color * shade);
                     }
                 }
             }
@@ -89,13 +89,11 @@ namespace CL
                 const float depth = start.z + (end.z - start.z) * t;
 
                 const uint32_t pixelIndex = colorAtt.size.x * currentY + currentX;
-                if ((depthAtt == nullptr) || (depth < depthAtt->image[pixelIndex]))
+                if ((depthAtt == nullptr) || (depth < depthAtt->getPixel(currentX, currentY)))
                 {
                     if (depthAtt != nullptr)
-                        depthAtt->image[pixelIndex] = depth;
-                    colorAtt.image[pixelIndex * 3] = static_cast<uint8_t>(std::min(material.color.x * shade, 255.f));
-                    colorAtt.image[pixelIndex * 3 + 1] = static_cast<uint8_t>(std::min(material.color.y * shade, 255.f));
-                    colorAtt.image[pixelIndex * 3 + 2] = static_cast<uint8_t>(std::min(material.color.z * shade, 255.f));
+                        depthAtt->setPixel(currentX, currentY, depth);
+                    colorAtt.setPixel(currentX, currentY, material.color * shade);
                 }
             }
 
@@ -124,7 +122,7 @@ namespace CL
         drawLine(pts[2], pts[0], colorAtt, &depthAtt, material, shade);
     }
 
-    void Editor::drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, DepthAttachment &depthAttachment, bool isSolid, bool hasShading)
+    void Editor::drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, DepthAttachment &depthAtt, bool isSolid, bool hasShading)
     {
         uint32_t currPoint = 0;
         std::array<clm::vec3, 3> points;
@@ -162,9 +160,9 @@ namespace CL
                 }
 
                 if (isSolid)
-                    drawTriangleSolid(colorAttachmentMain, depthAttachment, points, material, shade);
+                    drawTriangleSolid(colorAttMain, depthAtt, points, material, shade);
                 else
-                    drawTriangleWireframe(colorAttachmentMain, depthAttachment, points, material, shade);
+                    drawTriangleWireframe(colorAttMain, depthAtt, points, material, shade);
                 currPoint = 0;
             }
             else
@@ -176,14 +174,14 @@ namespace CL
 
     void Editor::renderSceneRasterized()
     {
-        depthAttachmentMain.clear(std::numeric_limits<float>::infinity());
-        depthAttachmentGizmo.clear(std::numeric_limits<float>::infinity());
+        depthAttMain.clear(std::numeric_limits<float>::infinity());
+        depthAttGizmo.clear(std::numeric_limits<float>::infinity());
 
         for (uint32_t i = 0; i < window.size.x * window.size.y * 3; i += 3)
         {
-            colorAttachmentMain.image[i] = static_cast<uint8_t>(scene.clearColor.x);
-            colorAttachmentMain.image[i + 1] = static_cast<uint8_t>(scene.clearColor.y);
-            colorAttachmentMain.image[i + 2] = static_cast<uint8_t>(scene.clearColor.z);
+            colorAttMain.image[i] = static_cast<uint8_t>(scene.clearColor.x);
+            colorAttMain.image[i + 1] = static_cast<uint8_t>(scene.clearColor.y);
+            colorAttMain.image[i + 2] = static_cast<uint8_t>(scene.clearColor.z);
         }
 
         for (uint32_t modelIndex = 0; modelIndex < scene.models.size(); modelIndex++)
@@ -193,7 +191,7 @@ namespace CL
             {
                 const Material &material = scene.models[modelIndex].materials[mesh.materialIndex];
                 const Material materialTinted = (modelIndex == selectedModelIndex ? material.tinted(clm::vec4(255.f, 255.f, 0.f, 255.f), 0.2f) : material);
-                drawMesh(mesh, materialTinted, modelMat, depthAttachmentMain, (editorViewMode == EDITOR_VIEW_SOLID), true);
+                drawMesh(mesh, materialTinted, modelMat, depthAttMain, (editorViewMode == EDITOR_VIEW_SOLID), true);
             }
         }
 
@@ -205,9 +203,9 @@ namespace CL
 
             for (const Mesh &mesh : gizmoArrow.meshes)
             {
-                drawMesh(mesh, Material({255.f, 0.f, 0.f, 255.f}), gizmoArrowXModelMat, depthAttachmentGizmo, true, false);
-                drawMesh(mesh, Material({0.f, 255.f, 0.f, 255.f}), gizmoArrowYModelMat, depthAttachmentGizmo, true, false);
-                drawMesh(mesh, Material({0.f, 0.f, 255.f, 255.f}), gizmoArrowZModelMat, depthAttachmentGizmo, true, false);
+                drawMesh(mesh, Material({255.f, 0.f, 0.f, 255.f}), gizmoArrowXModelMat, depthAttGizmo, true, false);
+                drawMesh(mesh, Material({0.f, 255.f, 0.f, 255.f}), gizmoArrowYModelMat, depthAttGizmo, true, false);
+                drawMesh(mesh, Material({0.f, 0.f, 255.f, 255.f}), gizmoArrowZModelMat, depthAttGizmo, true, false);
             }
         }
     }
@@ -240,9 +238,9 @@ namespace CL
                     {
                         for (uint32_t j = screen.y - markerSize; j < screen.y + markerSize; j++)
                         {
-                            colorAttachmentMain.image[j * window.size.x * 3 + i * 3] = static_cast<uint8_t>(color.x);
-                            colorAttachmentMain.image[j * window.size.x * 3 + i * 3 + 1] = static_cast<uint8_t>(color.y);
-                            colorAttachmentMain.image[j * window.size.x * 3 + i * 3 + 2] = static_cast<uint8_t>(color.z);
+                            colorAttMain.image[j * window.size.x * 3 + i * 3] = static_cast<uint8_t>(color.x);
+                            colorAttMain.image[j * window.size.x * 3 + i * 3 + 1] = static_cast<uint8_t>(color.y);
+                            colorAttMain.image[j * window.size.x * 3 + i * 3 + 2] = static_cast<uint8_t>(color.z);
                         }
                     }
                 }
@@ -250,7 +248,7 @@ namespace CL
         };
 
         if (originClip.w > 0.f && destClip.w > 0.f)
-            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, colorAttachmentMain, nullptr, Material({255.f, 255.f, 0.f, 255.f}), 1.f);
+            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, colorAttMain, nullptr, Material({255.f, 255.f, 0.f, 255.f}), 1.f);
 
         drawMarker(originScreen, originClip.w, {255.f, 0.f, 0.f});
         drawMarker(destScreen, destClip.w, (hitModel == INVALID_INDEX ? clm::vec3(255.f, 255.f, 0.f) : clm::vec3(0.f, 255.f, 0.f)));
