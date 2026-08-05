@@ -190,9 +190,9 @@ namespace CL
         }
     }
 
-    std::vector<uint8_t> renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth)
+    ColorAttachment renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth)
     {
-        std::vector<uint8_t> image(imageSize.x * imageSize.y * 3);
+        ColorAttachment colorAtt(imageSize);
 
         BVH bvh = constructBVH(scene.models, bvhDepth);
 
@@ -276,7 +276,7 @@ namespace CL
                             }
                         }
 
-                        placePixel3c(pixelColor * vignette, pixelX, pixelY, image, imageSize.x);
+                        colorAtt.placePixel(pixelX, pixelY, pixelColor * vignette);
                     }
                 }
             };
@@ -288,10 +288,10 @@ namespace CL
                 worker.join();
         }
 
-        return image;
+        return colorAtt;
     }
 
-    void saveImageToPPM(const std::vector<uint8_t> &image, const clm::uvec2 &size, const std::string &filePath, bool shouldOpen)
+    void exportAttachmentPPM(const ColorAttachment &colorAtt, const std::string &filePath, bool shouldOpen)
     {
         std::ofstream file(filePath, std::ios::binary);
 
@@ -299,9 +299,9 @@ namespace CL
             throw std::runtime_error("Failed to open .ppm file");
 
         file << "P6\n"
-             << size.x << ' ' << size.y << "\n255\n";
+             << colorAtt.size.x << ' ' << colorAtt.size.y << "\n255\n";
 
-        file.write(reinterpret_cast<const char *>(image.data()), static_cast<std::streamsize>(size.x) * static_cast<std::streamsize>(size.y) * 3);
+        file.write(reinterpret_cast<const char *>(colorAtt.image.data()), static_cast<std::streamsize>(colorAtt.size.x) * static_cast<std::streamsize>(colorAtt.size.y) * 3);
 
         file.close();
 

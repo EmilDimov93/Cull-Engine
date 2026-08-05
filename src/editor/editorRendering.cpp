@@ -42,7 +42,7 @@ namespace CL
                     if (depth < depthAtt.image[y * depthAtt.size.x + x])
                     {
                         depthAtt.image[y * depthAtt.size.x + x] = depth;
-                        placePixel3c(clm::clamp(material.color * shade, 0.f, 255.f), x, y, colorAtt.image, colorAtt.size.x);
+                        colorAtt.placePixel(x, y, material.color * shade);
                     }
                 }
             }
