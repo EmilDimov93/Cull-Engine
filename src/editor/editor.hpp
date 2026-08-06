@@ -5,6 +5,8 @@
 
 #include "../math/clm.hpp"
 
+#include "vert.hpp"
+
 #include "../scene/scene.hpp"
 #include "../attachments.hpp"
 
@@ -80,6 +82,8 @@ namespace CL
         uint32_t findHoveredModel(clm::ivec2 mousePos);
         void drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, DepthAttachment &depthAtt, bool isSolid, bool hasShading);
         void debugRay(clm::vec3 origin, clm::vec3 dir);
+
+        VertexShader vertShader;
 
         // Ray-Tracer
         clm::uvec2 resultImageSize = {100u, 100u};

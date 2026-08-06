@@ -8,7 +8,7 @@
 
 namespace CL
 {
-    Editor::Editor(const Scene &scene, clm::uvec2 windowSize) : window(windowSize), colorAttMain(windowSize), depthAttMain(windowSize), depthAttGizmo(windowSize)
+    Editor::Editor(const Scene &scene, clm::uvec2 windowSize) : window(windowSize), colorAttMain(windowSize), depthAttMain(windowSize), depthAttGizmo(windowSize), vertShader(ZNEAR)
     {
         this->scene = scene;
 

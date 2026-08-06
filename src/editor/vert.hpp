@@ -17,7 +17,7 @@ namespace CL
 
         clm::mat4 viewMat, projectionMat;
         clm::uvec2 windowSize;
-        void uniform_buffer(clm::mat4 viewMat, clm::mat4 projectionMat, clm::uvec2 windowSize)
+        void updateUniformBuffer(clm::mat4 viewMat, clm::mat4 projectionMat, clm::uvec2 windowSize)
         {
             this->viewMat = viewMat;
             this->projectionMat = projectionMat;
@@ -25,7 +25,7 @@ namespace CL
         }
 
         clm::mat4 modelMat;
-        void push_constants(clm::mat4 modelMat) { this->modelMat = modelMat; }
+        void updatePushConstant(clm::mat4 modelMat) { this->modelMat = modelMat; }
 
         clm::vec3 run(Vertex vertex, clm::mat4 modelMat, clm::vec3 &normal)
         {

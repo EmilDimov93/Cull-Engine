@@ -124,51 +124,25 @@ namespace CL
 
     void Editor::drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, DepthAttachment &depthAtt, bool isSolid, bool hasShading)
     {
-        uint32_t currPoint = 0;
-        std::array<clm::vec3, 3> points;
-        std::array<clm::vec3, 3> pointsWorld;
-        std::array<clm::vec3, 3> pointsView;
-        for (uint32_t index : mesh.indices)
+        for (uint32_t i = 2; i < mesh.indices.size(); i += 3)
         {
-            pointsWorld[currPoint] = modelMat * mesh.vertices[index].pos;
-            pointsView[currPoint] = scene.camera.viewMat() * pointsWorld[currPoint];
+            std::array<clm::vec3, 3> normals;
+            std::array<clm::vec3, 3> verticesClip{vertShader.run(mesh.vertices[mesh.indices[i - 2]], modelMat, normals[2]),
+                                                  vertShader.run(mesh.vertices[mesh.indices[i - 1]], modelMat, normals[1]),
+                                                  vertShader.run(mesh.vertices[mesh.indices[i - 0]], modelMat, normals[0])};
 
-            if (pointsView[currPoint].z < ZNEAR)
+            float shade = 1.f;
+            if (hasShading)
             {
-                currPoint = 0;
-                continue;
+                const float ambient = 0.25f;
+                const clm::vec3 normal = (normals[0] + normals[1] + normals[2]) / 3.f;
+                shade = std::max(0.f, normal.dot(scene.surfaceToSunDir) + ambient);
             }
 
-            const clm::vec4 pointClip = projectionMat * clm::vec4(pointsView[currPoint], 1.f);
-            const clm::vec2 ndc(pointClip.x / pointClip.w, pointClip.y / pointClip.w);
-
-            points[currPoint] = {clm::signedToUnitRange(ndc.x) * window.size.x,
-                                 clm::signedToUnitRange(ndc.y) * window.size.y,
-                                 pointsView[currPoint].z};
-
-            if (currPoint == 2)
-            {
-                float shade = 1.f;
-                if (hasShading)
-                {
-                    const clm::vec3 edge1 = pointsWorld[1] - pointsWorld[0];
-                    const clm::vec3 edge2 = pointsWorld[2] - pointsWorld[0];
-                    const clm::vec3 worldNormal = edge1.cross(edge2).normalized();
-
-                    const float ambient = 0.25f;
-                    shade = std::max(0.f, worldNormal.dot(scene.surfaceToSunDir) + ambient);
-                }
-
-                if (isSolid)
-                    drawTriangleSolid(colorAttMain, depthAtt, points, material, shade);
-                else
-                    drawTriangleWireframe(colorAttMain, depthAtt, points, material, shade);
-                currPoint = 0;
-            }
+            if (isSolid)
+                drawTriangleSolid(colorAttMain, depthAtt, verticesClip, material, shade);
             else
-            {
-                currPoint++;
-            }
+                drawTriangleWireframe(colorAttMain, depthAtt, verticesClip, material, shade);
         }
     }
 
@@ -184,9 +158,14 @@ namespace CL
             colorAttMain.image[i + 2] = static_cast<uint8_t>(scene.clearColor.z);
         }
 
+        vertShader.updateUniformBuffer(scene.camera.viewMat(), projectionMat, window.size);
+
         for (uint32_t modelIndex = 0; modelIndex < scene.models.size(); modelIndex++)
         {
             const clm::mat4 modelMat = scene.models[modelIndex].transform.mat();
+
+            vertShader.updatePushConstant(modelMat);
+
             for (const Mesh &mesh : scene.models[modelIndex].meshes)
             {
                 const Material &material = scene.models[modelIndex].materials[mesh.materialIndex];
