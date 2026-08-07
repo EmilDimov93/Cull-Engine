@@ -33,19 +33,16 @@ namespace CL
             const clm::vec4 view = viewMat * world;
 
             if (view.z < zNear)
-            {
                 return false;
-            }
 
             const clm::vec4 pointClip = projectionMat * view;
-            const clm::vec2 ndc(pointClip.x / pointClip.w, pointClip.y / pointClip.w);
 
             {
                 outNormal = (modelMat * inVertex.normal).normalized();
             }
 
-            outVerticesClip = clm::vec3(clm::signedToUnitRange(ndc.x) * windowSize.x,
-                             clm::signedToUnitRange(ndc.y) * windowSize.y,
+            outVerticesClip = clm::vec3(clm::signedToUnitRange(pointClip.x / pointClip.w) * windowSize.x,
+                             clm::signedToUnitRange(pointClip.y / pointClip.w) * windowSize.y,
                              view.z);
 
             return true;
