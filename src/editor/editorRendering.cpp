@@ -122,21 +122,35 @@ namespace CL
         drawLine(pts[2], pts[0], colorAtt, &depthAtt, material, shade);
     }
 
-    void Editor::drawMesh(const Mesh &mesh, const Material &material, const clm::mat4 &modelMat, DepthAttachment &depthAtt, bool isSolid, bool hasShading)
+    void Editor::drawMesh(const Mesh &mesh, const Material &material, DepthAttachment &depthAtt, bool isSolid, bool hasShading)
     {
         for (uint32_t i = 2; i < mesh.indices.size(); i += 3)
         {
             std::array<clm::vec3, 3> normals;
-            std::array<clm::vec3, 3> verticesClip{vertShader.run(mesh.vertices[mesh.indices[i - 2]], modelMat, normals[2]),
-                                                  vertShader.run(mesh.vertices[mesh.indices[i - 1]], modelMat, normals[1]),
-                                                  vertShader.run(mesh.vertices[mesh.indices[i - 0]], modelMat, normals[0])};
+            std::array<clm::vec3, 3> verticesClip;
+
+            if (!vertShader.run(mesh.vertices[mesh.indices[i - 0]], verticesClip[0], normals[0]))
+                continue;
+            if (!vertShader.run(mesh.vertices[mesh.indices[i - 1]], verticesClip[1], normals[1]))
+                continue;
+            if (!vertShader.run(mesh.vertices[mesh.indices[i - 2]], verticesClip[2], normals[2]))
+                continue;
+
+            {
+                const float signedAreaTimesTwo =
+                    (verticesClip[1].x - verticesClip[0].x) * (verticesClip[2].y - verticesClip[0].y) -
+                    (verticesClip[2].x - verticesClip[0].x) * (verticesClip[1].y - verticesClip[0].y);
+
+                if (signedAreaTimesTwo <= 0.0f)
+                    continue;
+            }
 
             float shade = 1.f;
             if (hasShading)
             {
-                const float ambient = 0.25f;
+                static constexpr float ambientLight = 0.25f;
                 const clm::vec3 normal = (normals[0] + normals[1] + normals[2]) / 3.f;
-                shade = std::max(0.f, normal.dot(scene.surfaceToSunDir) + ambient);
+                shade = std::max(0.f, normal.dot(scene.surfaceToSunDir) + ambientLight);
             }
 
             if (isSolid)
@@ -170,7 +184,7 @@ namespace CL
             {
                 const Material &material = scene.models[modelIndex].materials[mesh.materialIndex];
                 const Material materialTinted = (modelIndex == selectedModelIndex ? material.tinted(clm::vec4(255.f, 255.f, 0.f, 255.f), 0.2f) : material);
-                drawMesh(mesh, materialTinted, modelMat, depthAttMain, (viewMode == VIEW_MODE_SOLID), true);
+                drawMesh(mesh, materialTinted, depthAttMain, (viewMode == VIEW_MODE_SOLID), true);
             }
         }
 
@@ -182,9 +196,12 @@ namespace CL
 
             for (const Mesh &mesh : gizmoArrow.meshes)
             {
-                drawMesh(mesh, Material({255.f, 0.f, 0.f, 255.f}), gizmoArrowXModelMat, depthAttGizmo, true, false);
-                drawMesh(mesh, Material({0.f, 255.f, 0.f, 255.f}), gizmoArrowYModelMat, depthAttGizmo, true, false);
-                drawMesh(mesh, Material({0.f, 0.f, 255.f, 255.f}), gizmoArrowZModelMat, depthAttGizmo, true, false);
+                vertShader.updatePushConstant(gizmoArrowXModelMat);
+                drawMesh(mesh, Material({255.f, 0.f, 0.f, 255.f}), depthAttGizmo, true, false);
+                vertShader.updatePushConstant(gizmoArrowYModelMat);
+                drawMesh(mesh, Material({0.f, 255.f, 0.f, 255.f}), depthAttGizmo, true, false);
+                vertShader.updatePushConstant(gizmoArrowZModelMat);
+                drawMesh(mesh, Material({0.f, 0.f, 255.f, 255.f}), depthAttGizmo, true, false);
             }
         }
     }

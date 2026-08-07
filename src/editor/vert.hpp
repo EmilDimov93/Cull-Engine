@@ -27,26 +27,28 @@ namespace CL
         clm::mat4 modelMat;
         void updatePushConstant(clm::mat4 modelMat) { this->modelMat = modelMat; }
 
-        clm::vec3 run(Vertex vertex, clm::mat4 modelMat, clm::vec3 &normal)
+        bool run(Vertex inVertex, clm::vec3 &outVerticesClip, clm::vec3 &outNormal)
         {
-            const clm::vec4 world = modelMat * clm::vec4(vertex.pos, 1.f);
+            const clm::vec4 world = modelMat * clm::vec4(inVertex.pos, 1.f);
             const clm::vec4 view = viewMat * world;
 
             if (view.z < zNear)
             {
-                // invalid
+                return false;
             }
 
             const clm::vec4 pointClip = projectionMat * view;
             const clm::vec2 ndc(pointClip.x / pointClip.w, pointClip.y / pointClip.w);
 
             {
-                normal = (modelMat * vertex.normal).normalized();
+                outNormal = (modelMat * inVertex.normal).normalized();
             }
 
-            return clm::vec3(clm::signedToUnitRange(ndc.x) * windowSize.x,
+            outVerticesClip = clm::vec3(clm::signedToUnitRange(ndc.x) * windowSize.x,
                              clm::signedToUnitRange(ndc.y) * windowSize.y,
                              view.z);
+
+            return true;
         }
     };
 }
