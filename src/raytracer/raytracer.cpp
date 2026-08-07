@@ -21,9 +21,9 @@ namespace CL
 
         const clm::vec3 rayCrossEdge02 = rayVector.cross(edge02);
 
-        float determinant = edge01.dot(rayCrossEdge02);
-
-        if (determinant > -EPSILON && determinant < EPSILON)
+        const float determinant = edge01.dot(rayCrossEdge02);
+        
+        if(determinant < EPSILON)
             return false;
 
         const float inverseDeterminant = 1 / determinant;
@@ -145,7 +145,6 @@ namespace CL
 
             if (outNormal)
             {
-                
                 clm::vec3 barycentric = computeBarycentric(vertices, pickedIntersectionPoint);
                 clm::vec3 smoothNormal = vertices[0].normal * barycentric.x + vertices[1].normal * barycentric.y + vertices[2].normal * barycentric.z;
                 *outNormal = smoothNormal.normalized();
