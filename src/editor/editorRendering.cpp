@@ -5,19 +5,19 @@
 
 namespace CL
 {
-    static void drawTriangleSolid(ColorAttachment &colorAtt, DepthAttachment &depthAtt, std::array<clm::vec3, 3> pts, Material material, float shade)
+    static void drawTriangleSolid(ColorAttachment &colorAtt, DepthAttachment &depthAtt, std::array<clm::vec3, 3> vertices, Material material, float shade)
     {
-        const int32_t minX = std::max(0.f, std::min({pts[0].x, pts[1].x, pts[2].x}));
-        const int32_t maxX = std::min(colorAtt.size.x - 1.f, std::max({pts[0].x, pts[1].x, pts[2].x}));
-        const int32_t minY = std::max(0.f, std::min({pts[0].y, pts[1].y, pts[2].y}));
-        const int32_t maxY = std::min(colorAtt.size.y - 1.f, std::max({pts[0].y, pts[1].y, pts[2].y}));
+        const int32_t minX = std::max(0.f, std::min({vertices[0].x, vertices[1].x, vertices[2].x}));
+        const int32_t maxX = std::min(colorAtt.size.x - 1.f, std::max({vertices[0].x, vertices[1].x, vertices[2].x}));
+        const int32_t minY = std::max(0.f, std::min({vertices[0].y, vertices[1].y, vertices[2].y}));
+        const int32_t maxY = std::min(colorAtt.size.y - 1.f, std::max({vertices[0].y, vertices[1].y, vertices[2].y}));
 
         auto edgeFunction = [](int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t px, int32_t py) -> int64_t
         {
             return static_cast<int64_t>(x2 - x1) * (py - y1) - static_cast<int64_t>(y2 - y1) * (px - x1);
         };
 
-        const int64_t area = edgeFunction(pts[0].x, pts[0].y, pts[1].x, pts[1].y, pts[2].x, pts[2].y);
+        const int64_t area = edgeFunction(vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y);
         if (area == 0)
             return;
 
@@ -25,9 +25,9 @@ namespace CL
         {
             for (int32_t y = minY; y <= maxY; ++y)
             {
-                const int64_t w0 = edgeFunction(pts[1].x, pts[1].y, pts[2].x, pts[2].y, x, y);
-                const int64_t w1 = edgeFunction(pts[2].x, pts[2].y, pts[0].x, pts[0].y, x, y);
-                const int64_t w2 = edgeFunction(pts[0].x, pts[0].y, pts[1].x, pts[1].y, x, y);
+                const int64_t w0 = edgeFunction(vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y, x, y);
+                const int64_t w1 = edgeFunction(vertices[2].x, vertices[2].y, vertices[0].x, vertices[0].y, x, y);
+                const int64_t w2 = edgeFunction(vertices[0].x, vertices[0].y, vertices[1].x, vertices[1].y, x, y);
 
                 const bool hasNeg = (w0 < 0) || (w1 < 0) || (w2 < 0);
                 const bool hasPos = (w0 > 0) || (w1 > 0) || (w2 > 0);
@@ -37,7 +37,7 @@ namespace CL
                     const float b0 = static_cast<float>(w0) / area;
                     const float b1 = static_cast<float>(w1) / area;
                     const float b2 = static_cast<float>(w2) / area;
-                    const float depth = b0 * pts[0].z + b1 * pts[1].z + b2 * pts[2].z;
+                    const float depth = b0 * vertices[0].z + b1 * vertices[1].z + b2 * vertices[2].z;
 
                     if (depth < depthAtt.getPixel(x, y))
                     {
@@ -115,11 +115,11 @@ namespace CL
         }
     }
 
-    static void drawTriangleWireframe(ColorAttachment &colorAtt, DepthAttachment &depthAtt, std::array<clm::vec3, 3> pts, Material material, float shade)
+    static void drawTriangleWireframe(ColorAttachment &colorAtt, DepthAttachment &depthAtt, std::array<clm::vec3, 3> vertices, Material material, float shade)
     {
-        drawLine(pts[0], pts[1], colorAtt, &depthAtt, material, shade);
-        drawLine(pts[1], pts[2], colorAtt, &depthAtt, material, shade);
-        drawLine(pts[2], pts[0], colorAtt, &depthAtt, material, shade);
+        drawLine(vertices[0], vertices[1], colorAtt, &depthAtt, material, shade);
+        drawLine(vertices[1], vertices[2], colorAtt, &depthAtt, material, shade);
+        drawLine(vertices[2], vertices[0], colorAtt, &depthAtt, material, shade);
     }
 
     void Editor::drawMesh(const Mesh &mesh, const Material &material, DepthAttachment &depthAtt, bool isSolid, bool hasShading)

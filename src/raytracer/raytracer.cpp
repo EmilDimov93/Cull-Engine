@@ -22,7 +22,7 @@ namespace CL
         const clm::vec3 rayCrossEdge02 = rayVector.cross(edge02);
 
         const float determinant = edge01.dot(rayCrossEdge02);
-        
+
         if(determinant < EPSILON)
             return false;
 
@@ -279,8 +279,9 @@ namespace CL
                         if (hasHit)
                         {
                             hasHit = false;
-                            castRayBVH(bvh, intersectionPoint, scene.surfaceToSunDir, &hasHit, nullptr, nullptr, nullptr);
-                            if (hasHit)
+                            Material secondMaterial;
+                            castRayBVH(bvh, intersectionPoint, scene.surfaceToSunDir, &hasHit, &secondMaterial, nullptr, nullptr);
+                            if (hasHit && secondMaterial.color.w > 0.99f)
                             {
                                 pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 0.5f).color;
                             }
