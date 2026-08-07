@@ -149,7 +149,7 @@ namespace CL
             {
                 for (const Vertex &v : mesh.vertices)
                 {
-                    clm::vec3 world = mat * v.pos;
+                    clm::vec3 world = (mat * clm::vec4(v.pos, 1.f)).xyz();
 
                     if (min.x > world.x - EPSILON)
                         min.x = world.x - EPSILON;
@@ -258,7 +258,7 @@ namespace CL
                 std::array<Vertex, 3> vertices;
                 for (uint32_t i = 0; i < mesh.indices.size(); i++)
                 {
-                    vertices[i % 3].pos = mat * mesh.vertices[mesh.indices[i]].pos;
+                    vertices[i % 3].pos = (mat * clm::vec4(mesh.vertices[mesh.indices[i]].pos, 1.f)).xyz();
                     vertices[i % 3].normal = model.transform.rot * mesh.vertices[mesh.indices[i]].normal;
                     if (i % 3 == 2)
                     {

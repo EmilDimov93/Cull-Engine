@@ -11,13 +11,13 @@
 
 namespace CL
 {
-    [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<clm::vec3, 3> &pts, clm::vec3 &outIntersectionPoint)
+    [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<Vertex, 3> &vertices, clm::vec3 &outIntersectionPoint)
     {
         constexpr float EPSILON = 1e-7f;
         constexpr float RAY_MIN_DISTANCE = 1e-3f;
 
-        const clm::vec3 edge01 = pts[1] - pts[0];
-        const clm::vec3 edge02 = pts[2] - pts[0];
+        const clm::vec3 edge01 = vertices[1].pos - vertices[0].pos;
+        const clm::vec3 edge02 = vertices[2].pos - vertices[0].pos;
 
         const clm::vec3 rayCrossEdge02 = rayVector.cross(edge02);
 
@@ -27,7 +27,7 @@ namespace CL
             return false;
 
         const float inverseDeterminant = 1 / determinant;
-        const clm::vec3 vertex0ToRayOrigin = rayOrigin - pts[0];
+        const clm::vec3 vertex0ToRayOrigin = rayOrigin - vertices[0].pos;
         const float barycentricU = inverseDeterminant * vertex0ToRayOrigin.dot(rayCrossEdge02);
 
         if (barycentricU < 0.0 || barycentricU > 1.0)
@@ -116,7 +116,7 @@ namespace CL
             {
                 const std::array<Vertex, 3> &vertices = bvh.nodes[leave].triangles[i].vertices;
                 clm::vec3 intersectionPoint;
-                if (RayIntersectsTriangle(rayOrigin, rayDirection, {vertices[0].pos, vertices[1].pos, vertices[2].pos}, intersectionPoint))
+                if (RayIntersectsTriangle(rayOrigin, rayDirection, vertices, intersectionPoint))
                 {
                     const float distance = (intersectionPoint - rayOrigin).length();
                     if (distance < closestDistance)
@@ -156,13 +156,16 @@ namespace CL
                 const Mesh &mesh = models[i].meshes[j];
                 for (uint32_t indexOffset = 0; indexOffset + 2 < mesh.indices.size(); indexOffset += 3)
                 {
-                    const std::array<clm::vec3, 3> pts = {
-                        modelMat * mesh.vertices[mesh.indices[indexOffset + 0]].pos,
-                        modelMat * mesh.vertices[mesh.indices[indexOffset + 1]].pos,
-                        modelMat * mesh.vertices[mesh.indices[indexOffset + 2]].pos};
+                    const Vertex &v0 = mesh.vertices[mesh.indices[indexOffset + 0]];
+                    const Vertex &v1 = mesh.vertices[mesh.indices[indexOffset + 1]];
+                    const Vertex &v2 = mesh.vertices[mesh.indices[indexOffset + 2]];
+                    const std::array<Vertex, 3> vertices = {
+                        Vertex((modelMat * clm::vec4(v0.pos, 1.f)).xyz(), modelMat * v0.normal),
+                        Vertex((modelMat * clm::vec4(v1.pos, 1.f)).xyz(), modelMat * v1.normal),
+                        Vertex((modelMat * clm::vec4(v2.pos, 1.f)).xyz(), modelMat * v2.normal)};
 
                     clm::vec3 intersectionPoint;
-                    if (RayIntersectsTriangle(rayOrigin, rayDirection, pts, intersectionPoint))
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, vertices, intersectionPoint))
                     {
                         const float distance = (intersectionPoint - rayOrigin).length();
                         if (distance < closestDistance)
@@ -176,8 +179,8 @@ namespace CL
 
                             if (outNormal)
                             {
-                                clm::vec3 edge1 = pts[1] - pts[0];
-                                clm::vec3 edge2 = pts[2] - pts[0];
+                                clm::vec3 edge1 = vertices[1].pos - vertices[0].pos;
+                                clm::vec3 edge2 = vertices[2].pos - vertices[0].pos;
                                 *outNormal = edge1.cross(edge2).normalized();
                             }
 
