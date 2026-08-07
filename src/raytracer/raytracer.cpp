@@ -108,39 +108,51 @@ namespace CL
     {
         std::vector<uint32_t> hitLeaves = traverseBVH(bvh.nodes, rayOrigin, clm::vec3(1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z));
 
+        uint32_t pickedTriangle = INVALID_INDEX;
+        uint32_t pickedLeave = INVALID_INDEX;
+        clm::vec3 pickedIntersectionPoint;
         float closestDistance = std::numeric_limits<float>::max();
 
         for (uint32_t leave : hitLeaves)
         {
             for (uint32_t i = 0; i < bvh.nodes[leave].triangles.size(); i++)
             {
-                const std::array<Vertex, 3> &vertices = bvh.nodes[leave].triangles[i].vertices;
                 clm::vec3 intersectionPoint;
-                if (RayIntersectsTriangle(rayOrigin, rayDirection, vertices, intersectionPoint))
+
+                if (RayIntersectsTriangle(rayOrigin, rayDirection, bvh.nodes[leave].triangles[i].vertices, intersectionPoint))
                 {
                     const float distance = (intersectionPoint - rayOrigin).length();
                     if (distance < closestDistance)
                     {
+                        pickedTriangle = i;
+                        pickedLeave = leave;
+                        pickedIntersectionPoint = intersectionPoint;
                         closestDistance = distance;
-
-                        if (outHasHit)
-                            *outHasHit = true;
-
-                        if (outMaterial)
-                            *outMaterial = bvh.materials[bvh.nodes[leave].triangles[i].material];
-
-                        if (outNormal)
-                        {
-                            clm::vec3 barycentric = computeBarycentric(vertices, intersectionPoint);
-                            clm::vec3 smoothNormal = vertices[0].normal * barycentric.x + vertices[1].normal * barycentric.y + vertices[2].normal * barycentric.z;
-                            *outNormal = smoothNormal.normalized();
-                        }
-
-                        if (outIntersectionPoint)
-                            *outIntersectionPoint = intersectionPoint;
                     }
                 }
             }
+        }
+
+        if (pickedTriangle != INVALID_INDEX)
+        {
+            const std::array<Vertex, 3> &vertices = bvh.nodes[pickedLeave].triangles[pickedTriangle].vertices;
+
+            if (outHasHit)
+                *outHasHit = true;
+
+            if (outMaterial)
+                *outMaterial = bvh.materials[bvh.nodes[pickedLeave].triangles[pickedTriangle].material];
+
+            if (outNormal)
+            {
+                
+                clm::vec3 barycentric = computeBarycentric(vertices, pickedIntersectionPoint);
+                clm::vec3 smoothNormal = vertices[0].normal * barycentric.x + vertices[1].normal * barycentric.y + vertices[2].normal * barycentric.z;
+                *outNormal = smoothNormal.normalized();
+            }
+
+            if (outIntersectionPoint)
+                *outIntersectionPoint = pickedIntersectionPoint;
         }
     }
 
@@ -308,7 +320,7 @@ namespace CL
 
         file.close();
 
-        if(shouldOpen)
+        if (shouldOpen)
             std::system("start build\\result.ppm");
     }
 }
