@@ -162,7 +162,10 @@ namespace CL
         {
             std::vector<Model> gizmoArrows{gizmoArrow};
 
-            gizmoArrows[0].transform = Model::Transform(scene.models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.4f, 0.4f, 0.4f});
+            const clm::vec3 &gizmoPos = scene.models[selectedModelIndex].transform.pos;
+            const clm::vec3 gizmoHitbox(0.4f, 0.4f, 0.4f);
+
+            gizmoArrows[0].transform = Model::Transform(gizmoPos, {0.f, 0.f, -clm::PI / 2}, gizmoHitbox);
             castRay(gizmoArrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
 
             if (hitModelIndex != INVALID_INDEX)
@@ -171,7 +174,7 @@ namespace CL
                 return selectedModelIndex;
             }
 
-            gizmoArrows[0].transform = Model::Transform(scene.models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.4f, 0.4f, 0.4f});
+            gizmoArrows[0].transform = Model::Transform(gizmoPos, {0.f, 0.f, 0.f}, gizmoHitbox);
             castRay(gizmoArrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
 
             if (hitModelIndex != INVALID_INDEX)
@@ -180,7 +183,7 @@ namespace CL
                 return selectedModelIndex;
             }
 
-            gizmoArrows[0].transform = Model::Transform(scene.models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.4f, 0.4f, 0.4f});
+            gizmoArrows[0].transform = Model::Transform(gizmoPos, {-clm::PI / 2, 0.f, 0.f}, gizmoHitbox);
             castRay(gizmoArrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
 
             if (hitModelIndex != INVALID_INDEX)

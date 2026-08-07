@@ -190,17 +190,16 @@ namespace CL
 
         if (selectedModelIndex != INVALID_INDEX)
         {
-            const clm::mat4 gizmoArrowXModelMat = Model::Transform(scene.models[selectedModelIndex].transform.pos, {0.f, 0.f, -clm::PI / 2}, {0.2f, 0.4f, 0.2f}).mat();
-            const clm::mat4 gizmoArrowYModelMat = Model::Transform(scene.models[selectedModelIndex].transform.pos, {0.f, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
-            const clm::mat4 gizmoArrowZModelMat = Model::Transform(scene.models[selectedModelIndex].transform.pos, {-clm::PI / 2, 0.f, 0.f}, {0.2f, 0.4f, 0.2f}).mat();
+            const clm::vec3 pos = scene.models[selectedModelIndex].transform.pos;
+            const clm::vec3 scale(0.2f, 0.4f, 0.2f);
 
             for (const Mesh &mesh : gizmoArrow.meshes)
             {
-                vertShader.updatePushConstant(gizmoArrowXModelMat);
+                vertShader.updatePushConstant(Model::Transform(pos, {0.f, 0.f, -clm::PI / 2}, scale).mat());
                 drawMesh(mesh, Material({255.f, 0.f, 0.f, 255.f}), depthAttGizmo, true, false);
-                vertShader.updatePushConstant(gizmoArrowYModelMat);
+                vertShader.updatePushConstant(Model::Transform(pos, {0.f, 0.f, 0.f}, scale).mat());
                 drawMesh(mesh, Material({0.f, 255.f, 0.f, 255.f}), depthAttGizmo, true, false);
-                vertShader.updatePushConstant(gizmoArrowZModelMat);
+                vertShader.updatePushConstant(Model::Transform(pos, {-clm::PI / 2, 0.f, 0.f}, scale).mat());
                 drawMesh(mesh, Material({0.f, 0.f, 255.f, 255.f}), depthAttGizmo, true, false);
             }
         }
