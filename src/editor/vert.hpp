@@ -13,10 +13,12 @@ namespace CL
     {
     public:
         float zNear;
-        VertexShader(float zNear) : zNear(zNear) {}
-
         clm::mat4 viewMat, projectionMat;
         clm::uvec2 windowSize;
+        clm::mat4 modelMat;
+
+        VertexShader(float zNear) : zNear(zNear) {}
+
         void updateUniformBuffer(clm::mat4 viewMat, clm::mat4 projectionMat, clm::uvec2 windowSize)
         {
             this->viewMat = viewMat;
@@ -24,7 +26,6 @@ namespace CL
             this->windowSize = windowSize;
         }
 
-        clm::mat4 modelMat;
         void updatePushConstant(clm::mat4 modelMat) { this->modelMat = modelMat; }
 
         bool run(Vertex inVertex, clm::vec3 &outVerticesClip, clm::vec3 &outNormal)
