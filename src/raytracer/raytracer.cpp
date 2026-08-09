@@ -23,7 +23,7 @@ namespace CL
 
         const float determinant = edge01.dot(rayCrossEdge02);
 
-        if(determinant < EPSILON)
+        if (determinant < EPSILON)
             return false;
 
         const float inverseDeterminant = 1 / determinant;
@@ -229,13 +229,7 @@ namespace CL
                         const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / imageSize.x) * aspectRatio * tanHalfFov;
                         const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / imageSize.y) * tanHalfFov;
 
-                        const clm::vec3 rayDirection = (basis.right * ndcX + basis.up * ndcY + basis.forward).normalized();
-
                         clm::vec4 pixelColor(scene.clearColor, 255.f);
-
-                        const float vignetteX = static_cast<float>(pixelX > imageSize.x / 2 ? imageSize.x - pixelX : pixelX) / (imageSize.x / 2);
-                        const float vignetteY = static_cast<float>(pixelY > imageSize.y / 2 ? imageSize.y - pixelY : pixelY) / (imageSize.y / 2);
-                        const float vignette = 1.0f - vignetteStrength * (1.0f - (vignetteX + vignetteY) * 0.5f);
 
                         Material material;
                         clm::vec3 normal;
@@ -243,18 +237,14 @@ namespace CL
                         bool hasHit = false;
 
                         clm::vec3 rayOrigin = scene.camera.getPos();
+                        const clm::vec3 rayDirection = (basis.right * ndcX + basis.up * ndcY + basis.forward).normalized();
                         clm::vec4 accumulatedColor(0.f, 0.f, 0.f, 0.f);
                         static constexpr uint32_t MAX_RAYS_PER_PIXEL = 20;
                         for (uint32_t i = 0; i < MAX_RAYS_PER_PIXEL; i++)
                         {
                             castRayBVH(bvh, rayOrigin, rayDirection, &hasHit, &material, &normal, &intersectionPoint);
 
-                            if (!hasHit)
-                            {
-                                pixelColor = accumulatedColor * accumulatedColor.w + pixelColor * (1.f - accumulatedColor.w);
-                                break;
-                            }
-                            else
+                            if (hasHit)
                             {
                                 const float accumulatedAlpha01 = accumulatedColor.w / 255.f;
                                 if (material.color.w > 254.f)
@@ -272,6 +262,11 @@ namespace CL
                                     accumulatedColor = clm::clamp(accumulatedColor, 0.f, 255.f);
                                 }
                             }
+                            else
+                            {
+                                pixelColor = accumulatedColor * accumulatedColor.w + pixelColor * (1.f - accumulatedColor.w);
+                                break;
+                            }
 
                             rayOrigin = intersectionPoint + rayDirection * 1e-6f;
                         }
@@ -287,9 +282,13 @@ namespace CL
                             }
                             else
                             {
-                                pixelColor = material.tinted({0.f, 0.f, 0.f, 255.f}, 1.f - clm::signedToUnitRange(normal.dot(scene.surfaceToSunDir))).color;
+                                pixelColor = clm::clamp(material.color * (scene.ambient + std::max(0.f, normal.dot(scene.surfaceToSunDir))), 0.f, 255.f);
                             }
                         }
+
+                        const float vignetteX = static_cast<float>(pixelX > imageSize.x / 2 ? imageSize.x - pixelX : pixelX) / (imageSize.x / 2);
+                        const float vignetteY = static_cast<float>(pixelY > imageSize.y / 2 ? imageSize.y - pixelY : pixelY) / (imageSize.y / 2);
+                        const float vignette = 1.0f - vignetteStrength * (1.0f - (vignetteX + vignetteY) * 0.5f);
 
                         colorAtt.setPixel(pixelX, pixelY, pixelColor * vignette);
                     }

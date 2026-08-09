@@ -82,6 +82,7 @@ namespace CL
         Camera camera;
         clm::vec3 clearColor;
         clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
+        float ambient = 0.3f;
 
         uint32_t addModel(const Model &model)
         {

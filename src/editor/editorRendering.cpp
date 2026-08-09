@@ -148,9 +148,8 @@ namespace CL
             float shade = 1.f;
             if (hasShading)
             {
-                static constexpr float ambientLight = 0.25f;
                 const clm::vec3 normal = (normals[0] + normals[1] + normals[2]) / 3.f;
-                shade = std::max(0.f, normal.dot(scene.surfaceToSunDir) + ambientLight);
+                shade = std::max(0.f, normal.dot(scene.surfaceToSunDir) + scene.ambient);
             }
 
             if (isSolid)
