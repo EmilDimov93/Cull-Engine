@@ -112,7 +112,7 @@ namespace clm
 
         [[nodiscard]] constexpr vec4 operator/(const vec4 &other) const
         {
-            return vec4(x / other.x, y / other.y, z / other.z, w * other.w);
+            return vec4(x / other.x, y / other.y, z / other.z, w / other.w);
         }
 
         [[nodiscard]] constexpr vec4 operator+(const vec4 &other) const
