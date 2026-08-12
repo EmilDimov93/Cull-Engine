@@ -10,6 +10,9 @@
 #include <string>
 #include <stdexcept>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include "../../ext/stb_image/stb_image.h"
+
 namespace CL
 {
     Model loadOBJ(const std::string &filePath)
@@ -24,6 +27,7 @@ namespace CL
 
         std::vector<clm::vec3> positions;
         std::vector<clm::vec3> normals;
+        std::vector<clm::vec2> texCoords;
         std::unordered_map<std::string, Material> materials;
 
         uint32_t currentMaterialIndex = INVALID_INDEX;
@@ -42,6 +46,8 @@ namespace CL
             std::ifstream mtl(mtlPath);
             if (!mtl.is_open())
                 return;
+
+            std::filesystem::path mtlDir = std::filesystem::path(mtlPath).parent_path();
 
             std::string line;
             std::string currentMat;
@@ -81,6 +87,24 @@ namespace CL
                     float metallic = 0.f;
                     ss >> metallic;
                     materials[currentMat].metallic = metallic;
+                }
+                else if (line.starts_with("map_Kd ") && !currentMat.empty())
+                {
+                    std::string texName = line.substr(7);
+                    trim(texName);
+                    std::string texturePath = (mtlDir / texName).string();
+
+                    int textureWidth = 0;
+                    int textureHeight = 0;
+                    int textureChannels = 0;
+                    stbi_uc *pixels = stbi_load(texturePath.c_str(), &textureWidth, &textureHeight, &textureChannels, STBI_rgb_alpha);
+                    if (pixels)
+                    {
+                        Material &mat = materials[currentMat];
+                        mat.textureSize = {static_cast<uint32_t>(textureWidth), static_cast<uint32_t>(textureHeight)};
+                        mat.texturePixels.assign(pixels, pixels + static_cast<size_t>(textureWidth) * textureHeight * 4);
+                        stbi_image_free(pixels);
+                    }
                 }
             }
         };
@@ -156,15 +180,23 @@ namespace CL
                 ss >> n.x >> n.y >> n.z;
                 normals.push_back(n);
             }
+            else if (line.starts_with("vt "))
+            {
+                clm::vec2 t;
+                std::stringstream ss(line.substr(3));
+                ss >> t.x >> t.y;
+                texCoords.push_back(t);
+            }
             else if (line.starts_with("f "))
             {
                 std::stringstream ss(line.substr(2));
                 std::string a, b, c;
                 ss >> a >> b >> c;
 
-                auto parseFaceVertex = [](const std::string &token, uint32_t &positionIndex, uint32_t &normalIndex)
+                auto parseFaceVertex = [](const std::string &token, uint32_t &positionIndex, uint32_t &normalIndex, uint32_t &texCoordIndex)
                 {
                     normalIndex = INVALID_INDEX;
+                    texCoordIndex = INVALID_INDEX;
 
                     size_t firstSlash = token.find('/');
                     positionIndex = static_cast<uint32_t>(std::stoi(token.substr(0, firstSlash)) - 1);
@@ -173,6 +205,12 @@ namespace CL
                         return;
 
                     size_t secondSlash = token.find('/', firstSlash + 1);
+
+                    size_t texStart = firstSlash + 1;
+                    size_t texEnd = (secondSlash == std::string::npos) ? token.size() : secondSlash;
+                    if (texEnd > texStart)
+                        texCoordIndex = static_cast<uint32_t>(std::stoi(token.substr(texStart, texEnd - texStart)) - 1);
+
                     if (secondSlash != std::string::npos && secondSlash + 1 < token.size())
                         normalIndex = static_cast<uint32_t>(std::stoi(token.substr(secondSlash + 1)) - 1);
                 };
@@ -182,12 +220,28 @@ namespace CL
                 {
                     uint32_t positionIndex;
                     uint32_t normalIndex;
-                    parseFaceVertex(token, positionIndex, normalIndex);
+                    uint32_t texCoordIndex;
+                    parseFaceVertex(token, positionIndex, normalIndex, texCoordIndex);
 
                     clm::vec3 normal = (normalIndex != INVALID_INDEX) ? normals[normalIndex] : clm::vec3{0.f, 0.f, 0.f};
 
+                    clm::uvec2 texel = {INVALID_INDEX, INVALID_INDEX};
+                    if (texCoordIndex != INVALID_INDEX && currentMaterialIndex != INVALID_INDEX)
+                    {
+                        const Material &mat = materialList[currentMaterialIndex];
+                        if (!mat.texturePixels.empty())
+                        {
+                            clm::vec2 uv = texCoords[texCoordIndex];
+                            float u = uv.x - std::floor(uv.x);
+                            float v = uv.y - std::floor(uv.y);
+                            uint32_t px = std::min(static_cast<uint32_t>(u * mat.textureSize.x), mat.textureSize.x - 1);
+                            uint32_t py = std::min(static_cast<uint32_t>((1.f - v) * mat.textureSize.y), mat.textureSize.y - 1);
+                            texel = {px, py};
+                        }
+                    }
+
                     currentMeshIndices.push_back(static_cast<uint32_t>(currentMeshVertices.size()));
-                    currentMeshVertices.emplace_back(positions[positionIndex], normal);
+                    currentMeshVertices.emplace_back(positions[positionIndex], normal, texel);
                 }
             }
             else if (line.starts_with("o "))

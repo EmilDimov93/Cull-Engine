@@ -20,9 +20,10 @@ namespace CL
     {
         clm::vec3 pos;
         clm::vec3 normal;
+        clm::uvec2 tex;
 
         constexpr Vertex() = default;
-        constexpr Vertex(clm::vec3 pos, clm::vec3 normal) : pos(pos), normal(normal) {}
+        constexpr Vertex(clm::vec3 pos, clm::vec3 normal, clm::uvec2 tex = {}) : pos(pos), normal(normal), tex(tex) {}
     };
 
     struct Material
@@ -30,6 +31,8 @@ namespace CL
         clm::vec4 color;
         float roughness;
         float metallic;
+        std::vector<uint8_t> texturePixels;
+        clm::uvec2 textureSize;
 
         constexpr Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}, float roughness = 0.5f, float metallic = 0.f) : color(color), roughness(roughness), metallic(metallic) {}
 
