@@ -1,0 +1,4 @@
+stb_image
+Author: Sean Barrett
+License: Public Domain (Unlicense)
+https://unlicense.org/
