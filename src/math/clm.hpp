@@ -22,6 +22,16 @@ namespace clm
         uint32_t x, y;
 
         constexpr uvec2(uint32_t x = 0u, uint32_t y = 0u) : x(x), y(y) {}
+
+        [[nodiscard]] constexpr uvec2 operator+(const uvec2 &other) const
+        {
+            return uvec2(x + other.x, y + other.y);
+        }
+
+        [[nodiscard]] constexpr uvec2 operator*(const float &scalar) const
+        {
+            return uvec2(x * scalar, y * scalar);
+        }
     };
 
     struct vec2
