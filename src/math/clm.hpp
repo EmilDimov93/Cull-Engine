@@ -164,6 +164,11 @@ namespace clm
                          clamp(v.w, min, max));
     }
 
+    [[nodiscard]] constexpr clm::vec4 lerp(clm::vec4 a, clm::vec4 b, float factor)
+    {
+        return a * (1.f - factor) + b * factor;
+    }
+
     struct mat4
     {
     private:
