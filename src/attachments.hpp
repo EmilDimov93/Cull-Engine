@@ -45,6 +45,16 @@ namespace CL
             image[(y * size.x + x) * channelCount + 1] = static_cast<uint8_t>(clm::clamp(color.y, 0.f, 255.f));
             image[(y * size.x + x) * channelCount + 2] = static_cast<uint8_t>(clm::clamp(color.z, 0.f, 255.f));
         }
+
+        clm::vec4 getPixel(uint32_t x, uint32_t y)
+        {
+            if (x >= size.x || y >= image.size() / (size.x * channelCount))
+                return clm::vec4(0.f, 0.f, 0.f, 0.f);
+
+            return clm::vec4(image[(y * size.x + x) * channelCount],
+                             image[(y * size.x + x) * channelCount + 1],
+                             image[(y * size.x + x) * channelCount + 2], 255.f);
+        }
     };
 
     struct DepthAttachment : Attachment<float>
