@@ -220,6 +220,21 @@ namespace CL
         }
     }
 
+    void applyPostEffects(ColorAttachment &colorAtt, float vignetteStrength)
+    {
+        for (uint32_t y = 0; y < colorAtt.size.y; y++)
+        {
+            for (uint32_t x = 0; x < colorAtt.size.x; x++)
+            {
+                const float vignetteX = static_cast<float>(x > colorAtt.size.x / 2 ? colorAtt.size.x - x : x) / (colorAtt.size.x / 2);
+                const float vignetteY = static_cast<float>(y > colorAtt.size.y / 2 ? colorAtt.size.y - y : y) / (colorAtt.size.y / 2);
+                const float vignette = 1.0f - vignetteStrength * (1.0f - (vignetteX + vignetteY) * 0.5f);
+
+                colorAtt.setPixel(x, y, colorAtt.getPixel(x, y) * vignette);
+            }
+        }
+    }
+
     ColorAttachment renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth)
     {
         ColorAttachment colorAtt(imageSize);
@@ -269,9 +284,9 @@ namespace CL
                                 if (material.texturePixels.size() > 0)
                                 {
                                     baseColor = clm::vec4(material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 0],
-                                                      material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 1],
-                                                      material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 2],
-                                                      material.color.w);
+                                                          material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 1],
+                                                          material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 2],
+                                                          material.color.w);
                                 }
 
                                 // Accumulate color
@@ -312,11 +327,7 @@ namespace CL
                                 pixelColor = clm::clamp(pixelColor * (scene.ambient + std::max(0.f, normal.dot(scene.surfaceToSunDir))), 0.f, 255.f);
                         }
 
-                        const float vignetteX = static_cast<float>(pixelX > imageSize.x / 2 ? imageSize.x - pixelX : pixelX) / (imageSize.x / 2);
-                        const float vignetteY = static_cast<float>(pixelY > imageSize.y / 2 ? imageSize.y - pixelY : pixelY) / (imageSize.y / 2);
-                        const float vignette = 1.0f - vignetteStrength * (1.0f - (vignetteX + vignetteY) * 0.5f);
-
-                        colorAtt.setPixel(pixelX, pixelY, pixelColor * vignette);
+                        colorAtt.setPixel(pixelX, pixelY, pixelColor);
                     }
                 }
             };
@@ -327,6 +338,8 @@ namespace CL
             for (std::thread &worker : workers)
                 worker.join();
         }
+
+        applyPostEffects(colorAtt, vignetteStrength);
 
         return colorAtt;
     }
