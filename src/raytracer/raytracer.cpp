@@ -263,32 +263,30 @@ namespace CL
 
                             if (hasHit)
                             {
+                                // Find base color
                                 const Material &material = bvh.materials[materialIndex];
-                                clm::vec4 color;
+                                clm::vec4 baseColor = material.color;
                                 if (material.texturePixels.size() > 0)
                                 {
-                                    color = clm::vec4(material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 0],
+                                    baseColor = clm::vec4(material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 0],
                                                       material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 1],
                                                       material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 2],
                                                       material.color.w);
                                 }
-                                else
-                                {
-                                    color = material.color;
-                                }
 
+                                // Accumulate color
                                 const float accumulatedAlpha01 = accumulatedColor.w / 255.f;
-                                if (color.w > 254.f)
+                                if (baseColor.w > 254.f)
                                 {
-                                    pixelColor = accumulatedColor * accumulatedAlpha01 + color * (1.f - accumulatedAlpha01);
+                                    pixelColor = accumulatedColor * accumulatedAlpha01 + baseColor * (1.f - accumulatedAlpha01);
                                     break;
                                 }
                                 else
                                 {
-                                    const float materialAlpha01 = color.w / 255.f;
+                                    const float materialAlpha01 = baseColor.w / 255.f;
 
                                     const float totalAlpha = accumulatedAlpha01 + materialAlpha01 * (1.f - accumulatedAlpha01);
-                                    accumulatedColor = clm::vec4(clm::vec3(accumulatedColor.xyz() * accumulatedAlpha01 + color.xyz() * materialAlpha01 * (1.0f - accumulatedAlpha01)) / totalAlpha, totalAlpha);
+                                    accumulatedColor = clm::vec4(clm::vec3(accumulatedColor.xyz() * accumulatedAlpha01 + baseColor.xyz() * materialAlpha01 * (1.0f - accumulatedAlpha01)) / totalAlpha, totalAlpha);
 
                                     accumulatedColor = clm::clamp(accumulatedColor, 0.f, 255.f);
                                 }
@@ -304,29 +302,14 @@ namespace CL
 
                         if (hasHit)
                         {
-                            const Material &material = bvh.materials[materialIndex];
-
-                            clm::vec4 baseColor = material.color;
-                            if (material.texturePixels.size() > 0)
-                            {
-                                const uint32_t texelIndex = (uv.y * material.textureSize.x + uv.x) * 4;
-                                baseColor = clm::vec4(material.texturePixels[texelIndex + 0],
-                                                      material.texturePixels[texelIndex + 1],
-                                                      material.texturePixels[texelIndex + 2],
-                                                      material.color.w);
-                            }
-
+                            // Shade base color
                             hasHit = false;
-                            uint32_t secondMaterialIndex = INVALID_INDEX;
-                            castRayBVH(bvh, intersectionPoint, scene.surfaceToSunDir, &hasHit, &secondMaterialIndex, nullptr, nullptr, nullptr);
-                            if (hasHit && bvh.materials[secondMaterialIndex].color.w > 0.99f)
-                            {
-                                pixelColor = clm::lerp(baseColor, {0.f, 0.f, 0.f, 255.f}, 0.5f);
-                            }
+                            materialIndex = INVALID_INDEX;
+                            castRayBVH(bvh, intersectionPoint, scene.surfaceToSunDir, &hasHit, &materialIndex, nullptr, nullptr, nullptr);
+                            if (hasHit && bvh.materials[materialIndex].color.w > 0.99f)
+                                pixelColor = clm::lerp(pixelColor, {0.f, 0.f, 0.f, 255.f}, 0.5f);
                             else
-                            {
-                                pixelColor = clm::clamp(baseColor * (scene.ambient + std::max(0.f, normal.dot(scene.surfaceToSunDir))), 0.f, 255.f);
-                            }
+                                pixelColor = clm::clamp(pixelColor * (scene.ambient + std::max(0.f, normal.dot(scene.surfaceToSunDir))), 0.f, 255.f);
                         }
 
                         const float vignetteX = static_cast<float>(pixelX > imageSize.x / 2 ? imageSize.x - pixelX : pixelX) / (imageSize.x / 2);
