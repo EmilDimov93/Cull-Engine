@@ -82,7 +82,7 @@ namespace CL
         void renderSceneRasterized();
 
         uint32_t findHoveredModel(clm::ivec2 mousePos);
-        void drawMesh(const Mesh &mesh, const Material &material, DepthAttachment &depthAtt, bool isSolid, bool hasShading);
+        void drawMesh(const Mesh &mesh, clm::vec4 color, DepthAttachment &depthAtt, bool isSolid, bool hasShading);
         void debugRay(clm::vec3 origin, clm::vec3 dir);
 
         // Ray-Tracer

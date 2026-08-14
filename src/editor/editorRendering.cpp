@@ -5,7 +5,7 @@
 
 namespace CL
 {
-    static void drawTriangleSolid(ColorAttachment &colorAtt, DepthAttachment &depthAtt, std::array<clm::vec3, 3> vertices, Material material, float shade)
+    static void drawTriangleSolid(ColorAttachment &colorAtt, DepthAttachment &depthAtt, std::array<clm::vec3, 3> vertices, clm::vec4 color, float shade)
     {
         const int32_t minX = std::max(0.f, std::min({vertices[0].x, vertices[1].x, vertices[2].x}));
         const int32_t maxX = std::min(colorAtt.size.x - 1.f, std::max({vertices[0].x, vertices[1].x, vertices[2].x}));
@@ -42,14 +42,14 @@ namespace CL
                     if (depth < depthAtt.getPixel(x, y))
                     {
                         depthAtt.setPixel(x, y, depth);
-                        colorAtt.setPixel(x, y, material.color * shade);
+                        colorAtt.setPixel(x, y, color * shade);
                     }
                 }
             }
         }
     }
 
-    void drawLine(clm::vec3 start, clm::vec3 end, ColorAttachment &colorAtt, DepthAttachment *depthAtt, const Material &material, float shade)
+    void drawLine(clm::vec3 start, clm::vec3 end, ColorAttachment &colorAtt, DepthAttachment *depthAtt, clm::vec4 color, float shade)
     {
         int32_t currentX = static_cast<int32_t>(std::floor(start.x));
         int32_t currentY = static_cast<int32_t>(std::floor(start.y));
@@ -93,7 +93,7 @@ namespace CL
                 {
                     if (depthAtt != nullptr)
                         depthAtt->setPixel(currentX, currentY, depth);
-                    colorAtt.setPixel(currentX, currentY, material.color * shade);
+                    colorAtt.setPixel(currentX, currentY, color * shade);
                 }
             }
 
@@ -115,14 +115,14 @@ namespace CL
         }
     }
 
-    static void drawTriangleWireframe(ColorAttachment &colorAtt, DepthAttachment &depthAtt, std::array<clm::vec3, 3> vertices, Material material, float shade)
+    static void drawTriangleWireframe(ColorAttachment &colorAtt, DepthAttachment &depthAtt, std::array<clm::vec3, 3> vertices, clm::vec4 color, float shade)
     {
-        drawLine(vertices[0], vertices[1], colorAtt, &depthAtt, material, shade);
-        drawLine(vertices[1], vertices[2], colorAtt, &depthAtt, material, shade);
-        drawLine(vertices[2], vertices[0], colorAtt, &depthAtt, material, shade);
+        drawLine(vertices[0], vertices[1], colorAtt, &depthAtt, color, shade);
+        drawLine(vertices[1], vertices[2], colorAtt, &depthAtt, color, shade);
+        drawLine(vertices[2], vertices[0], colorAtt, &depthAtt, color, shade);
     }
 
-    void Editor::drawMesh(const Mesh &mesh, const Material &material, DepthAttachment &depthAtt, bool isSolid, bool hasShading)
+    void Editor::drawMesh(const Mesh &mesh, clm::vec4 color, DepthAttachment &depthAtt, bool isSolid, bool hasShading)
     {
         for (uint32_t i = 2; i < mesh.indices.size(); i += 3)
         {
@@ -153,9 +153,9 @@ namespace CL
             }
 
             if (isSolid)
-                drawTriangleSolid(colorAttMain, depthAtt, verticesClip, material, shade);
+                drawTriangleSolid(colorAttMain, depthAtt, verticesClip, color, shade);
             else
-                drawTriangleWireframe(colorAttMain, depthAtt, verticesClip, material, shade);
+                drawTriangleWireframe(colorAttMain, depthAtt, verticesClip, color, shade);
         }
     }
 
@@ -181,9 +181,12 @@ namespace CL
 
             for (const Mesh &mesh : scene.models[modelIndex].meshes)
             {
-                const Material &material = scene.models[modelIndex].materials[mesh.materialIndex];
-                const Material materialTinted = (modelIndex == selectedModelIndex ? material.tinted(clm::vec4(255.f, 255.f, 0.f, 255.f), 0.2f) : material);
-                drawMesh(mesh, materialTinted, depthAttMain, (viewMode == VIEW_MODE_SOLID), true);
+                clm::vec4 color = scene.models[modelIndex].materials[mesh.materialIndex].color;
+                if(modelIndex == selectedModelIndex)
+                {
+                    color = clm::lerp(color, clm::vec4(255.f, 255.f, 0.f, 255.f), 0.2f);
+                }
+                drawMesh(mesh, color, depthAttMain, (viewMode == VIEW_MODE_SOLID), true);
             }
         }
 
@@ -195,11 +198,11 @@ namespace CL
             for (const Mesh &mesh : gizmoArrow.meshes)
             {
                 vertShader.updatePushConstant(Model::Transform(pos, {0.f, 0.f, -clm::PI / 2}, scale).mat());
-                drawMesh(mesh, Material({255.f, 0.f, 0.f, 255.f}), depthAttGizmo, true, false);
+                drawMesh(mesh, {255.f, 0.f, 0.f, 255.f}, depthAttGizmo, true, false);
                 vertShader.updatePushConstant(Model::Transform(pos, {0.f, 0.f, 0.f}, scale).mat());
-                drawMesh(mesh, Material({0.f, 255.f, 0.f, 255.f}), depthAttGizmo, true, false);
+                drawMesh(mesh, {0.f, 255.f, 0.f, 255.f}, depthAttGizmo, true, false);
                 vertShader.updatePushConstant(Model::Transform(pos, {-clm::PI / 2, 0.f, 0.f}, scale).mat());
-                drawMesh(mesh, Material({0.f, 0.f, 255.f, 255.f}), depthAttGizmo, true, false);
+                drawMesh(mesh, {0.f, 0.f, 255.f, 255.f}, depthAttGizmo, true, false);
             }
         }
     }
@@ -242,7 +245,7 @@ namespace CL
         };
 
         if (originClip.w > 0.f && destClip.w > 0.f)
-            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, colorAttMain, nullptr, Material({255.f, 255.f, 0.f, 255.f}), 1.f);
+            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, colorAttMain, nullptr, {255.f, 255.f, 0.f, 255.f}, 1.f);
 
         drawMarker(originScreen, originClip.w, {255.f, 0.f, 0.f});
         drawMarker(destScreen, destClip.w, (hitModel == INVALID_INDEX ? clm::vec3(255.f, 255.f, 0.f) : clm::vec3(0.f, 255.f, 0.f)));

@@ -35,13 +35,6 @@ namespace CL
         clm::uvec2 textureSize;
 
         constexpr Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}, float roughness = 0.5f, float metallic = 0.f) : color(color), roughness(roughness), metallic(metallic) {}
-
-        constexpr Material tinted(clm::vec4 tint, float tintFactor) const
-        {
-            tint = tint * tintFactor;
-            clm::vec4 baseColor = color * (1.f - tintFactor);
-            return Material(baseColor + tint);
-        }
     };
 
     struct Mesh

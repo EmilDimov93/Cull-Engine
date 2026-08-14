@@ -260,10 +260,9 @@ namespace CL
                 {
                     vertices[i % 3].pos = (mat * clm::vec4(mesh.vertices[mesh.indices[i]].pos, 1.f)).xyz();
                     vertices[i % 3].normal = model.transform.rot * mesh.vertices[mesh.indices[i]].normal;
+                    vertices[i % 3].tex = mesh.vertices[mesh.indices[i]].tex;
                     if (i % 3 == 2)
-                    {
                         addTriangle(addTriangle, vertices, startMaterialIndex + mesh.materialIndex, 0);
-                    }
                 }
             }
 
