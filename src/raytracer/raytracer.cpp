@@ -11,7 +11,7 @@
 
 namespace CL
 {
-    [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<Vertex, 3> &vertices, clm::vec3 &outIntersectionPoint)
+    [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<Vertex, 3> &vertices, clm::vec3 &outIntersectionPoint, bool &outIsFrontFace)
     {
         constexpr float EPSILON = 1e-7f;
         constexpr float RAY_MIN_DISTANCE = 1e-3f;
@@ -23,8 +23,10 @@ namespace CL
 
         const float determinant = edge01.dot(rayCrossEdge02);
 
-        if (determinant < EPSILON)
+        if (std::abs(determinant) < EPSILON)
             return false;
+
+        outIsFrontFace = determinant > 0.0f;
 
         const float inverseDeterminant = 1 / determinant;
         const clm::vec3 vertex0ToRayOrigin = rayOrigin - vertices[0].pos;
@@ -118,8 +120,9 @@ namespace CL
             for (uint32_t i = 0; i < bvh.nodes[leave].triangles.size(); i++)
             {
                 clm::vec3 intersectionPoint;
+                bool isFrontFace;
 
-                if (RayIntersectsTriangle(rayOrigin, rayDirection, bvh.nodes[leave].triangles[i].vertices, intersectionPoint))
+                if (RayIntersectsTriangle(rayOrigin, rayDirection, bvh.nodes[leave].triangles[i].vertices, intersectionPoint, isFrontFace))
                 {
                     const float distance = (intersectionPoint - rayOrigin).length();
                     if (distance < closestDistance)
@@ -192,7 +195,8 @@ namespace CL
                         Vertex((modelMat * clm::vec4(v2.pos, 1.f)).xyz(), modelMat * v2.normal)};
 
                     clm::vec3 intersectionPoint;
-                    if (RayIntersectsTriangle(rayOrigin, rayDirection, vertices, intersectionPoint))
+                    bool isFrontFace;
+                    if (RayIntersectsTriangle(rayOrigin, rayDirection, vertices, intersectionPoint, isFrontFace))
                     {
                         const float distance = (intersectionPoint - rayOrigin).length();
                         if (distance < closestDistance)
