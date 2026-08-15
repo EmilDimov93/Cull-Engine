@@ -106,8 +106,22 @@ namespace CL
         return clm::vec3(weightA, weightB, weightC);
     }
 
-    void castRayBVH(const BVH &bvh, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, bool *outHasHit, uint32_t *outMaterialIndex, clm::vec3 *outNormal, clm::uvec2 *outUV, clm::vec3 *outIntersectionPoint, bool *outIsFrontFace)
+    struct HitData
     {
+        bool hasHit = false;
+        uint32_t materialIndex = INVALID_INDEX;
+        clm::vec3 normal;
+        clm::uvec2 uv;
+        clm::vec3 intersectionPoint;
+        bool isFrontFace;
+
+        explicit operator bool() const { return hasHit; }
+    };
+
+    [[nodiscard]] HitData castRayBVH(const BVH &bvh, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection)
+    {
+        HitData hit;
+
         std::vector<uint32_t> hitLeaves = traverseBVH(bvh.nodes, rayOrigin, clm::vec3(1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z));
 
         uint32_t pickedTriangle = INVALID_INDEX;
@@ -139,45 +153,36 @@ namespace CL
         {
             const std::array<Vertex, 3> &vertices = bvh.nodes[pickedLeave].triangles[pickedTriangle].vertices;
 
-            if (outHasHit)
-                *outHasHit = true;
+            hit.hasHit = true;
 
-            if (outMaterialIndex)
-                *outMaterialIndex = bvh.nodes[pickedLeave].triangles[pickedTriangle].material;
+            hit.materialIndex = bvh.nodes[pickedLeave].triangles[pickedTriangle].material;
 
-            if (outNormal || outUV)
-            {
-                clm::vec3 barycentric = computeBarycentric(vertices, pickedIntersectionPoint);
+            clm::vec3 barycentric = computeBarycentric(vertices, pickedIntersectionPoint);
 
-                if (outNormal)
-                {
-                    clm::vec3 smoothNormal = vertices[0].normal * barycentric.x + vertices[1].normal * barycentric.y + vertices[2].normal * barycentric.z;
-                    *outNormal = smoothNormal.normalized();
-                }
+            clm::vec3 smoothNormal = vertices[0].normal * barycentric.x + vertices[1].normal * barycentric.y + vertices[2].normal * barycentric.z;
+            hit.normal = smoothNormal.normalized();
 
-                if (outUV)
-                {
-                    clm::uvec2 texelCoord =
-                        vertices[0].tex * barycentric.x +
-                        vertices[1].tex * barycentric.y +
-                        vertices[2].tex * barycentric.z;
+            clm::uvec2 texelCoord =
+                vertices[0].tex * barycentric.x +
+                vertices[1].tex * barycentric.y +
+                vertices[2].tex * barycentric.z;
 
-                    const Material &material = bvh.materials[bvh.nodes[pickedLeave].triangles[pickedTriangle].material];
+            const Material &material = bvh.materials[bvh.nodes[pickedLeave].triangles[pickedTriangle].material];
 
-                    *outUV = clm::uvec2(clm::clamp(texelCoord.x + 0.5f, 0, material.textureSize.x - 1), clm::clamp(texelCoord.y + 0.5f, 0, material.textureSize.y - 1));
-                }
-            }
+            hit.uv = clm::uvec2(clm::clamp(texelCoord.x + 0.5f, 0, material.textureSize.x - 1), clm::clamp(texelCoord.y + 0.5f, 0, material.textureSize.y - 1));
 
-            if (outIntersectionPoint)
-                *outIntersectionPoint = pickedIntersectionPoint;
+            hit.intersectionPoint = pickedIntersectionPoint;
 
-            if (outIsFrontFace)
-                *outIsFrontFace = isFrontFace;
+            hit.isFrontFace = isFrontFace;
         }
+
+        return hit;
     }
 
-    void castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, uint32_t *outModelIndex, uint32_t *outMeshIndex, clm::vec3 *outNormal, clm::vec3 *outIntersectionPoint)
+    uint32_t castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection)
     {
+        uint32_t modelIndex = INVALID_INDEX;
+
         float closestDistance = std::numeric_limits<float>::max();
 
         for (uint32_t i = 0; i < models.size(); i++)
@@ -205,25 +210,14 @@ namespace CL
                         {
                             closestDistance = distance;
 
-                            if (outModelIndex)
-                                *outModelIndex = i;
-                            if (outMeshIndex)
-                                *outMeshIndex = j;
-
-                            if (outNormal)
-                            {
-                                clm::vec3 edge1 = vertices[1].pos - vertices[0].pos;
-                                clm::vec3 edge2 = vertices[2].pos - vertices[0].pos;
-                                *outNormal = edge1.cross(edge2).normalized();
-                            }
-
-                            if (outIntersectionPoint)
-                                *outIntersectionPoint = intersectionPoint;
+                            modelIndex = i;
                         }
                     }
                 }
             }
         }
+
+        return modelIndex;
     }
 
     void applyPostEffects(ColorAttachment &colorAtt, float vignetteStrength)
@@ -263,36 +257,33 @@ namespace CL
                 {
                     for (uint32_t pixelX = 0; pixelX < imageSize.x; pixelX++)
                     {
+                        static constexpr uint32_t MAX_RAYS_PER_PIXEL = 20;
+
                         const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / imageSize.x) * aspectRatio * tanHalfFov;
                         const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / imageSize.y) * tanHalfFov;
 
-                        clm::vec4 pixelColor(scene.clearColor, 255.f);
-
-                        uint32_t materialIndex;
-                        clm::vec3 normal;
-                        clm::vec3 intersectionPoint;
-                        clm::uvec2 uv;
-                        bool isFrontFace;
-                        bool hasHit = false;
-
                         clm::vec3 rayOrigin = scene.camera.getPos();
                         const clm::vec3 rayDirection = (basis.right * ndcX + basis.up * ndcY + basis.forward).normalized();
+
+                        clm::vec4 pixelColor(scene.clearColor, 255.f);
+
+                        HitData hit;
+
                         clm::vec4 accumulatedColor(0.f, 0.f, 0.f, 0.f);
-                        static constexpr uint32_t MAX_RAYS_PER_PIXEL = 20;
                         for (uint32_t i = 0; i < MAX_RAYS_PER_PIXEL; i++)
                         {
-                            castRayBVH(bvh, rayOrigin, rayDirection, &hasHit, &materialIndex, &normal, &uv, &intersectionPoint, &isFrontFace);
+                            hit = castRayBVH(bvh, rayOrigin, rayDirection);
 
-                            if (hasHit)
+                            if (hit)
                             {
                                 // Find base color
-                                const Material &material = bvh.materials[materialIndex];
+                                const Material &material = bvh.materials[hit.materialIndex];
                                 clm::vec4 baseColor = material.color;
                                 if (material.texturePixels.size() > 0)
                                 {
-                                    baseColor = clm::vec4(material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 0],
-                                                          material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 1],
-                                                          material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 2],
+                                    baseColor = clm::vec4(material.texturePixels[(hit.uv.y * material.textureSize.x + hit.uv.x) * 4.f + 0],
+                                                          material.texturePixels[(hit.uv.y * material.textureSize.x + hit.uv.x) * 4.f + 1],
+                                                          material.texturePixels[(hit.uv.y * material.textureSize.x + hit.uv.x) * 4.f + 2],
                                                           material.color.w);
                                 }
 
@@ -319,19 +310,17 @@ namespace CL
                                 break;
                             }
 
-                            rayOrigin = intersectionPoint + rayDirection * 1e-6f;
+                            rayOrigin = hit.intersectionPoint + rayDirection * 1e-6f;
                         }
 
-                        if (hasHit)
+                        if (hit)
                         {
                             // Shade base color
-                            hasHit = false;
-                            materialIndex = INVALID_INDEX;
-                            castRayBVH(bvh, intersectionPoint, scene.surfaceToSunDir, &hasHit, &materialIndex, nullptr, nullptr, nullptr, nullptr);
-                            if (hasHit && bvh.materials[materialIndex].color.w > 254.f)
+                            HitData shadowHit = castRayBVH(bvh, hit.intersectionPoint, scene.surfaceToSunDir);
+                            if (shadowHit && bvh.materials[shadowHit.materialIndex].color.w > 254.f)
                                 pixelColor = clm::lerp({0.f, 0.f, 0.f, 255.f}, pixelColor, scene.ambient);
                             else
-                                pixelColor = clm::clamp(pixelColor * (scene.ambient + std::max(0.f, normal.dot(scene.surfaceToSunDir))), 0.f, 255.f);
+                                pixelColor = clm::clamp(pixelColor * (scene.ambient + std::max(0.f, hit.normal.dot(scene.surfaceToSunDir))), 0.f, 255.f);
                         }
 
                         colorAtt.setPixel(pixelX, pixelY, pixelColor);

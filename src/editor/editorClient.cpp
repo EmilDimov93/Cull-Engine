@@ -166,7 +166,7 @@ namespace CL
             const clm::vec3 gizmoHitbox(0.4f, 0.4f, 0.4f);
 
             gizmoArrows[0].transform = Model::Transform(gizmoPos, {0.f, 0.f, -clm::PI / 2}, gizmoHitbox);
-            castRay(gizmoArrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+            hitModelIndex = castRay(gizmoArrows, cameraPos, rayDirection);
 
             if (hitModelIndex != INVALID_INDEX)
             {
@@ -175,7 +175,7 @@ namespace CL
             }
 
             gizmoArrows[0].transform = Model::Transform(gizmoPos, {0.f, 0.f, 0.f}, gizmoHitbox);
-            castRay(gizmoArrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+            hitModelIndex = castRay(gizmoArrows, cameraPos, rayDirection);
 
             if (hitModelIndex != INVALID_INDEX)
             {
@@ -184,7 +184,7 @@ namespace CL
             }
 
             gizmoArrows[0].transform = Model::Transform(gizmoPos, {-clm::PI / 2, 0.f, 0.f}, gizmoHitbox);
-            castRay(gizmoArrows, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+            hitModelIndex = castRay(gizmoArrows, cameraPos, rayDirection);
 
             if (hitModelIndex != INVALID_INDEX)
             {
@@ -193,7 +193,7 @@ namespace CL
             }
         }
 
-        castRay(scene.models, cameraPos, rayDirection, &hitModelIndex, nullptr, nullptr, nullptr);
+        hitModelIndex = castRay(scene.models, cameraPos, rayDirection);
 
         return hitModelIndex;
     }

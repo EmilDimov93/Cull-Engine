@@ -206,48 +206,4 @@ namespace CL
             }
         }
     }
-
-    void Editor::debugRay(clm::vec3 origin, clm::vec3 dir)
-    {
-        const clm::vec4 originClip = projectionMat * scene.camera.viewMat() * clm::vec4(origin, 1.f);
-        const clm::vec3 originNdc(originClip.x / originClip.w, originClip.y / originClip.w, originClip.z / originClip.w);
-        const clm::ivec2 originScreen(static_cast<int32_t>(clm::signedToUnitRange(originNdc.x) * window.size.x), static_cast<int32_t>(clm::signedToUnitRange(originNdc.y) * window.size.y));
-
-        uint32_t hitModel = INVALID_INDEX;
-        clm::vec3 intersectionPoint;
-        castRay(scene.models, origin, dir, &hitModel, nullptr, nullptr, &intersectionPoint);
-
-        if (hitModel == INVALID_INDEX)
-            intersectionPoint = origin + dir * 10.f;
-
-        const clm::vec4 destClip = projectionMat * scene.camera.viewMat() * clm::vec4(intersectionPoint, 1.f);
-        const clm::vec3 destNdc(destClip.x / destClip.w, destClip.y / destClip.w, destClip.z / destClip.w);
-        const clm::ivec2 destScreen(static_cast<int32_t>(clm::signedToUnitRange(destNdc.x) * window.size.x), static_cast<int32_t>(clm::signedToUnitRange(destNdc.y) * window.size.y));
-
-        auto drawMarker = [&](clm::ivec2 screen, float w, clm::vec3 color)
-        {
-            static constexpr uint32_t markerSize = 10;
-            if (w > 0.f)
-            {
-                if (screen.x >= markerSize && screen.x < window.size.x - markerSize && screen.y >= markerSize && screen.y < window.size.y - markerSize)
-                {
-                    for (uint32_t i = screen.x - markerSize; i < screen.x + markerSize; i++)
-                    {
-                        for (uint32_t j = screen.y - markerSize; j < screen.y + markerSize; j++)
-                        {
-                            colorAttMain.image[j * window.size.x * 3 + i * 3] = static_cast<uint8_t>(color.x);
-                            colorAttMain.image[j * window.size.x * 3 + i * 3 + 1] = static_cast<uint8_t>(color.y);
-                            colorAttMain.image[j * window.size.x * 3 + i * 3 + 2] = static_cast<uint8_t>(color.z);
-                        }
-                    }
-                }
-            }
-        };
-
-        if (originClip.w > 0.f && destClip.w > 0.f)
-            drawLine({static_cast<float>(originScreen.x), static_cast<float>(originScreen.y), 1.f}, {static_cast<float>(destScreen.x), static_cast<float>(destScreen.y), 1.f}, colorAttMain, nullptr, {255.f, 255.f, 0.f, 255.f}, 1.f);
-
-        drawMarker(originScreen, originClip.w, {255.f, 0.f, 0.f});
-        drawMarker(destScreen, destClip.w, (hitModel == INVALID_INDEX ? clm::vec3(255.f, 255.f, 0.f) : clm::vec3(0.f, 255.f, 0.f)));
-    }
 }
