@@ -106,13 +106,14 @@ namespace CL
         return clm::vec3(weightA, weightB, weightC);
     }
 
-    void castRayBVH(const BVH &bvh, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, bool *outHasHit, uint32_t *outMaterialIndex, clm::vec3 *outNormal, clm::uvec2 *outUV, clm::vec3 *outIntersectionPoint)
+    void castRayBVH(const BVH &bvh, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection, bool *outHasHit, uint32_t *outMaterialIndex, clm::vec3 *outNormal, clm::uvec2 *outUV, clm::vec3 *outIntersectionPoint, bool *outIsFrontFace)
     {
         std::vector<uint32_t> hitLeaves = traverseBVH(bvh.nodes, rayOrigin, clm::vec3(1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z));
 
         uint32_t pickedTriangle = INVALID_INDEX;
         uint32_t pickedLeave = INVALID_INDEX;
         clm::vec3 pickedIntersectionPoint;
+        bool isFrontFace;
         float closestDistance = std::numeric_limits<float>::max();
 
         for (uint32_t leave : hitLeaves)
@@ -120,8 +121,6 @@ namespace CL
             for (uint32_t i = 0; i < bvh.nodes[leave].triangles.size(); i++)
             {
                 clm::vec3 intersectionPoint;
-                bool isFrontFace;
-
                 if (RayIntersectsTriangle(rayOrigin, rayDirection, bvh.nodes[leave].triangles[i].vertices, intersectionPoint, isFrontFace))
                 {
                     const float distance = (intersectionPoint - rayOrigin).length();
@@ -171,6 +170,9 @@ namespace CL
 
             if (outIntersectionPoint)
                 *outIntersectionPoint = pickedIntersectionPoint;
+
+            if (outIsFrontFace)
+                *outIsFrontFace = isFrontFace;
         }
     }
 
@@ -270,6 +272,7 @@ namespace CL
                         clm::vec3 normal;
                         clm::vec3 intersectionPoint;
                         clm::uvec2 uv;
+                        bool isFrontFace;
                         bool hasHit = false;
 
                         clm::vec3 rayOrigin = scene.camera.getPos();
@@ -278,7 +281,7 @@ namespace CL
                         static constexpr uint32_t MAX_RAYS_PER_PIXEL = 20;
                         for (uint32_t i = 0; i < MAX_RAYS_PER_PIXEL; i++)
                         {
-                            castRayBVH(bvh, rayOrigin, rayDirection, &hasHit, &materialIndex, &normal, &uv, &intersectionPoint);
+                            castRayBVH(bvh, rayOrigin, rayDirection, &hasHit, &materialIndex, &normal, &uv, &intersectionPoint, &isFrontFace);
 
                             if (hasHit)
                             {
@@ -324,9 +327,9 @@ namespace CL
                             // Shade base color
                             hasHit = false;
                             materialIndex = INVALID_INDEX;
-                            castRayBVH(bvh, intersectionPoint, scene.surfaceToSunDir, &hasHit, &materialIndex, nullptr, nullptr, nullptr);
-                            if (hasHit && bvh.materials[materialIndex].color.w > 0.99f)
-                                pixelColor = clm::lerp(pixelColor, {0.f, 0.f, 0.f, 255.f}, 0.5f);
+                            castRayBVH(bvh, intersectionPoint, scene.surfaceToSunDir, &hasHit, &materialIndex, nullptr, nullptr, nullptr, nullptr);
+                            if (hasHit && bvh.materials[materialIndex].color.w > 254.f)
+                                pixelColor = clm::lerp({0.f, 0.f, 0.f, 255.f}, pixelColor, scene.ambient);
                             else
                                 pixelColor = clm::clamp(pixelColor * (scene.ambient + std::max(0.f, normal.dot(scene.surfaceToSunDir))), 0.f, 255.f);
                         }
