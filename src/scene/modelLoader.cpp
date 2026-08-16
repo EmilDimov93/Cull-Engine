@@ -88,6 +88,13 @@ namespace CL
                     ss >> metallic;
                     materials[currentMat].metallic = metallic;
                 }
+                else if (line.starts_with("Ni ") && !currentMat.empty())
+                {
+                    std::stringstream ss(line.substr(3));
+                    float ior = 1.5f;
+                    ss >> ior;
+                    materials[currentMat].ior = ior;
+                }
                 else if (line.starts_with("map_Kd ") && !currentMat.empty())
                 {
                     std::string texName = line.substr(7);

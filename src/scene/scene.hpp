@@ -31,6 +31,7 @@ namespace CL
         clm::vec4 color;
         float roughness;
         float metallic;
+        float ior;
         std::vector<uint8_t> texturePixels;
         clm::uvec2 textureSize;
 
