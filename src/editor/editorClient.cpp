@@ -147,16 +147,10 @@ namespace CL
 
     uint32_t Editor::findHoveredModel(clm::ivec2 mousePos)
     {
-        const float ndcX = clm::unitToSignedRange((mousePos.x + 0.5f) / window.size.x) * window.aspectRatio * TAN_HALF_FOV;
-        const float ndcY = -clm::unitToSignedRange((mousePos.y + 0.5f) / window.size.y) * TAN_HALF_FOV;
-
-        Camera::Basis basis = scene.camera.getBasis();
-
-        const clm::vec3 rayDirection = (basis.right * ndcX + basis.up * ndcY + basis.forward).normalized();
-
         uint32_t hitModelIndex = INVALID_INDEX;
 
-        clm::vec3 cameraPos = scene.camera.getPos();
+        RayGenerator rayGen(window.size, scene.camera, FOV);
+        Ray ray = rayGen.generateRay(clm::uvec2(static_cast<uint32_t>(mousePos.x), static_cast<uint32_t>(mousePos.y)));
 
         if (selectedModelIndex != INVALID_INDEX)
         {
@@ -166,7 +160,7 @@ namespace CL
             const clm::vec3 gizmoHitbox(0.4f, 0.4f, 0.4f);
 
             gizmoArrows[0].transform = Model::Transform(gizmoPos, {0.f, 0.f, -clm::PI / 2}, gizmoHitbox);
-            hitModelIndex = castRay(gizmoArrows, cameraPos, rayDirection);
+            hitModelIndex = castRay(gizmoArrows, ray);
 
             if (hitModelIndex != INVALID_INDEX)
             {
@@ -175,7 +169,7 @@ namespace CL
             }
 
             gizmoArrows[0].transform = Model::Transform(gizmoPos, {0.f, 0.f, 0.f}, gizmoHitbox);
-            hitModelIndex = castRay(gizmoArrows, cameraPos, rayDirection);
+            hitModelIndex = castRay(gizmoArrows, ray);
 
             if (hitModelIndex != INVALID_INDEX)
             {
@@ -184,7 +178,7 @@ namespace CL
             }
 
             gizmoArrows[0].transform = Model::Transform(gizmoPos, {-clm::PI / 2, 0.f, 0.f}, gizmoHitbox);
-            hitModelIndex = castRay(gizmoArrows, cameraPos, rayDirection);
+            hitModelIndex = castRay(gizmoArrows, ray);
 
             if (hitModelIndex != INVALID_INDEX)
             {
@@ -192,8 +186,8 @@ namespace CL
                 return selectedModelIndex;
             }
         }
-
-        hitModelIndex = castRay(scene.models, cameraPos, rayDirection);
+        
+        hitModelIndex = castRay(scene.models, ray);
 
         return hitModelIndex;
     }

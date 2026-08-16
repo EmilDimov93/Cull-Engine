@@ -22,7 +22,6 @@
 namespace CL
 {
     constexpr float FOV = clm::PI / 3;
-    const float TAN_HALF_FOV = std::tan(FOV / 2.f);
     constexpr float ZNEAR = 0.001f;
     constexpr float ZFAR = 1000.f;
 

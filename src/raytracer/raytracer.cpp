@@ -118,11 +118,11 @@ namespace CL
         explicit operator bool() const { return hasHit; }
     };
 
-    [[nodiscard]] HitData castRayBVH(const BVH &bvh, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection)
+    [[nodiscard]] HitData castRayBVH(const BVH &bvh, const Ray &ray)
     {
         HitData hit;
 
-        std::vector<uint32_t> hitLeaves = traverseBVH(bvh.nodes, rayOrigin, clm::vec3(1 / rayDirection.x, 1 / rayDirection.y, 1 / rayDirection.z));
+        std::vector<uint32_t> hitLeaves = traverseBVH(bvh.nodes, ray.origin, clm::vec3(1 / ray.direction.x, 1 / ray.direction.y, 1 / ray.direction.z));
 
         uint32_t pickedTriangle = INVALID_INDEX;
         uint32_t pickedLeave = INVALID_INDEX;
@@ -135,9 +135,9 @@ namespace CL
             for (uint32_t i = 0; i < bvh.nodes[leave].triangles.size(); i++)
             {
                 clm::vec3 intersectionPoint;
-                if (RayIntersectsTriangle(rayOrigin, rayDirection, bvh.nodes[leave].triangles[i].vertices, intersectionPoint, isFrontFace))
+                if (RayIntersectsTriangle(ray.origin, ray.direction, bvh.nodes[leave].triangles[i].vertices, intersectionPoint, isFrontFace))
                 {
-                    const float distance = (intersectionPoint - rayOrigin).length();
+                    const float distance = (intersectionPoint - ray.origin).length();
                     if (distance < closestDistance)
                     {
                         pickedTriangle = i;
@@ -179,7 +179,7 @@ namespace CL
         return hit;
     }
 
-    uint32_t castRay(const std::vector<Model> &models, const clm::vec3 &rayOrigin, const clm::vec3 &rayDirection)
+    uint32_t castRay(const std::vector<Model> &models, const Ray &ray)
     {
         uint32_t modelIndex = INVALID_INDEX;
 
@@ -203,9 +203,9 @@ namespace CL
 
                     clm::vec3 intersectionPoint;
                     bool isFrontFace;
-                    if (RayIntersectsTriangle(rayOrigin, rayDirection, vertices, intersectionPoint, isFrontFace))
+                    if (RayIntersectsTriangle(ray.origin, ray.direction, vertices, intersectionPoint, isFrontFace))
                     {
-                        const float distance = (intersectionPoint - rayOrigin).length();
+                        const float distance = (intersectionPoint - ray.origin).length();
                         if (distance < closestDistance)
                         {
                             closestDistance = distance;
@@ -246,10 +246,7 @@ namespace CL
             std::vector<std::thread> workers;
             workers.reserve(threadCount);
 
-            const Camera::Basis basis = scene.camera.getBasis();
-
-            const float aspectRatio = static_cast<float>(imageSize.x) / imageSize.y;
-            const float tanHalfFov = std::tan(fov / 2.f);
+            RayGenerator rayGen(imageSize, scene.camera, fov);
 
             auto renderRows = [&](unsigned int threadIndex)
             {
@@ -259,11 +256,7 @@ namespace CL
                     {
                         static constexpr uint32_t MAX_RAYS_PER_PIXEL = 20;
 
-                        const float ndcX = clm::unitToSignedRange((pixelX + 0.5f) / imageSize.x) * aspectRatio * tanHalfFov;
-                        const float ndcY = -clm::unitToSignedRange((pixelY + 0.5f) / imageSize.y) * tanHalfFov;
-
-                        clm::vec3 rayOrigin = scene.camera.getPos();
-                        const clm::vec3 rayDirection = (basis.right * ndcX + basis.up * ndcY + basis.forward).normalized();
+                        Ray ray = rayGen.generateRay({pixelX, pixelY});
 
                         clm::vec4 pixelColor(scene.clearColor, 255.f);
 
@@ -272,7 +265,7 @@ namespace CL
                         clm::vec4 accumulatedColor(0.f, 0.f, 0.f, 0.f);
                         for (uint32_t i = 0; i < MAX_RAYS_PER_PIXEL; i++)
                         {
-                            hit = castRayBVH(bvh, rayOrigin, rayDirection);
+                            hit = castRayBVH(bvh, ray);
 
                             if (hit)
                             {
@@ -310,13 +303,13 @@ namespace CL
                                 break;
                             }
 
-                            rayOrigin = hit.intersectionPoint + rayDirection * 1e-6f;
+                            ray.origin = hit.intersectionPoint + ray.direction * 1e-6f;
                         }
 
                         if (hit)
                         {
                             // Shade base color
-                            HitData shadowHit = castRayBVH(bvh, hit.intersectionPoint, scene.surfaceToSunDir);
+                            HitData shadowHit = castRayBVH(bvh, Ray(hit.intersectionPoint, scene.surfaceToSunDir));
                             if (shadowHit && bvh.materials[shadowHit.materialIndex].color.w > 254.f)
                                 pixelColor = clm::lerp({0.f, 0.f, 0.f, 255.f}, pixelColor, scene.ambient);
                             else
