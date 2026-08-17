@@ -40,7 +40,6 @@ Kd 0.322 0.172 0.000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Kd C:/Users/user/Desktop/CullEngine/build/car2/v_MAT_Details_Add_01_004.png
 
 newmtl v_MAT_Details_Chassis1
 Ns 0.000000
@@ -71,7 +70,6 @@ Kd 0.322 0.172 0.000
 Ni 1.500000
 d 1.000000
 illum 1
-map_Kd C:/Users/user/Desktop/CullEngine/build/car2/v_MAT_Details_INT_009.png
 
 newmtl v_MAT_Details_MAT_127
 Ns 0.000000
@@ -102,7 +100,6 @@ Kd 1.0 1.0 1.0
 Ni 1.500000
 d 1.000000
 illum 1
-map_Kd C:/Users/user/Desktop/CullEngine/build/car2/v_MAT_Lights_096.png
 
 newmtl v_MAT_Tire_Disk_045
 Ns 0.000000

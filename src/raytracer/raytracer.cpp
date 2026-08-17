@@ -321,7 +321,7 @@ namespace CL
                             float eta = ((hit.isFrontFace) ? (AIR_IOR / bvh.materials[hit.materialIndex].ior) : (bvh.materials[hit.materialIndex].ior / AIR_IOR));
                             clm::vec3 orientedNormal = hit.isFrontFace ? hit.normal : (hit.normal * -1.f);
                             clm::vec3 refractedDir;
-                            if(refractRayDir(ray.direction, orientedNormal, eta, refractedDir))
+                            if (refractRayDir(ray.direction, orientedNormal, eta, refractedDir))
                             {
                                 ray.origin = hit.intersectionPoint + ray.direction * 1e-6f;
                                 ray.direction = refractedDir;
@@ -335,11 +335,34 @@ namespace CL
                         if (hit)
                         {
                             // Shade base color
-                            HitData shadowHit = castRayBVH(bvh, Ray(hit.intersectionPoint, scene.surfaceToSunDir));
-                            if (shadowHit && bvh.materials[shadowHit.materialIndex].color.w > 254.f)
-                                pixelColor = clm::lerp({0.f, 0.f, 0.f, 255.f}, pixelColor, scene.ambient);
-                            else
-                                pixelColor = clm::clamp(pixelColor * (scene.ambient + std::max(0.f, hit.normal.dot(scene.surfaceToSunDir))), 0.f, 255.f);
+                            clm::vec3 accumulatedRadiance = clm::vec3(1.f, 1.f, 1.f) * scene.ambient;
+
+                            {
+                                HitData shadowHit = castRayBVH(bvh, Ray(hit.intersectionPoint + hit.normal * 1e-6f, scene.surfaceToSunDir));
+                                if (!shadowHit || bvh.materials[shadowHit.materialIndex].color.w < 254.f)
+                                    accumulatedRadiance += scene.sunLightColor * scene.sunLightIntensity * std::max(0.f, hit.normal.dot(scene.surfaceToSunDir));
+                            }
+
+                            for (const PointLight &light : scene.lights)
+                            {
+                                HitData shadowHit = castRayBVH(bvh, Ray(hit.intersectionPoint + hit.normal * 1e-6f, light.pos));
+
+                                if (!shadowHit || bvh.materials[shadowHit.materialIndex].color.w < 254.f)
+                                {
+                                    clm::vec3 surfaceToLightDir = light.pos - hit.intersectionPoint;
+                                    const float distance = surfaceToLightDir.length();
+                                    surfaceToLightDir = surfaceToLightDir.normalized();
+
+                                    const float dot = std::max(hit.normal.dot(surfaceToLightDir), 0.0f);
+                                    if (dot <= 0.0f)
+                                        continue;
+
+                                    const float attenuation = 1.0f / (distance * distance);
+                                    accumulatedRadiance += light.color * light.intensity * dot * attenuation;
+                                }
+                            }
+                            
+                            pixelColor = pixelColor * clm::vec4(accumulatedRadiance, 1.f);
                         }
 
                         colorAtt.setPixel(pixelX, pixelY, pixelColor);
