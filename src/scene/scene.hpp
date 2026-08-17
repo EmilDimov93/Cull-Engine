@@ -71,14 +71,26 @@ namespace CL
         Model() {}
     };
 
+    struct PointLight
+    {
+        clm::vec3 pos;
+        clm::vec3 color;
+        float intensity;
+
+        PointLight(clm::vec3 pos, clm::vec3 color, float intensity) : pos(pos), color(color), intensity(intensity) {}
+    };
+
     [[nodiscard]] Model loadOBJ(const std::string &filePath);
 
     struct Scene
     {
         std::vector<Model> models;
+        std::vector<PointLight> lights;
         Camera camera;
         clm::vec3 clearColor;
         clm::vec3 surfaceToSunDir = {0.f, 1.f, 0.f};
+        float sunLightIntensity = 1.0f;
+        clm::vec3 sunLightColor = {1.f, 1.f, 1.f};
         float ambient = 0.3f;
 
         uint32_t addModel(const Model &model)
