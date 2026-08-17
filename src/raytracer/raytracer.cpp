@@ -127,7 +127,7 @@ namespace CL
         uint32_t pickedTriangle = INVALID_INDEX;
         uint32_t pickedLeave = INVALID_INDEX;
         clm::vec3 pickedIntersectionPoint;
-        bool isFrontFace;
+        bool pickedTriangleIsFrontFace;
         float closestDistance = std::numeric_limits<float>::max();
 
         for (uint32_t leave : hitLeaves)
@@ -135,6 +135,7 @@ namespace CL
             for (uint32_t i = 0; i < bvh.nodes[leave].triangles.size(); i++)
             {
                 clm::vec3 intersectionPoint;
+                bool isFrontFace;
                 if (RayIntersectsTriangle(ray.origin, ray.direction, bvh.nodes[leave].triangles[i].vertices, intersectionPoint, isFrontFace))
                 {
                     const float distance = (intersectionPoint - ray.origin).length();
@@ -144,6 +145,7 @@ namespace CL
                         pickedLeave = leave;
                         pickedIntersectionPoint = intersectionPoint;
                         closestDistance = distance;
+                        pickedTriangleIsFrontFace = isFrontFace;
                     }
                 }
             }
@@ -173,7 +175,7 @@ namespace CL
 
             hit.intersectionPoint = pickedIntersectionPoint;
 
-            hit.isFrontFace = isFrontFace;
+            hit.isFrontFace = pickedTriangleIsFrontFace;
         }
 
         return hit;
@@ -235,6 +237,18 @@ namespace CL
         }
     }
 
+    bool refractRayDir(const clm::vec3 &preHitDir, const clm::vec3 &normal, float eta, clm::vec3 &refracted)
+    {
+        float cosHit = normal.dot(preHitDir);
+        float discriminant = 1.0f - eta * eta * (1.0f - cosHit * cosHit);
+
+        if (discriminant < 0.0f)
+            return false;
+
+        refracted = preHitDir * eta - normal * (eta * cosHit + sqrtf(discriminant));
+        return true;
+    }
+
     ColorAttachment renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth)
     {
         ColorAttachment colorAtt(imageSize);
@@ -281,7 +295,7 @@ namespace CL
                                 }
 
                                 // Accumulate color
-                                const float accumulatedAlpha01 = accumulatedColor.w / 255.f;
+                                const float accumulatedAlpha01 = accumulatedColor.w;
                                 if (baseColor.w > 254.f)
                                 {
                                     pixelColor = accumulatedColor * accumulatedAlpha01 + baseColor * (1.f - accumulatedAlpha01);
@@ -303,7 +317,19 @@ namespace CL
                                 break;
                             }
 
-                            ray.origin = hit.intersectionPoint + ray.direction * 1e-6f;
+                            static constexpr float AIR_IOR = 1.0003f;
+                            float eta = ((hit.isFrontFace) ? (AIR_IOR / bvh.materials[hit.materialIndex].ior) : (bvh.materials[hit.materialIndex].ior / AIR_IOR));
+                            clm::vec3 orientedNormal = hit.isFrontFace ? hit.normal : (hit.normal * -1.f);
+                            clm::vec3 refractedDir;
+                            if(refractRayDir(ray.direction, orientedNormal, eta, refractedDir))
+                            {
+                                ray.origin = hit.intersectionPoint + ray.direction * 1e-6f;
+                                ray.direction = refractedDir;
+                            }
+                            else
+                            {
+                                break;
+                            }
                         }
 
                         if (hit)
