@@ -13,12 +13,12 @@ int main()
         scene.clearColor = {144.f, 213.f, 255.f};
 
         CL::Model car = CL::loadOBJ("example/assets/vw.obj");
-        car.transform.pos = {1.3f, -1.f, 8.8f};
-        car.transform.rot = clm::quaternion().rotate({0.f, clm::PI * 5.f / 4.f, 0.f});
+        car.transform.pos = {-1.5f, -1.f, 8.8f};
+        car.transform.rot = clm::quaternion().rotate({0.f, clm::PI * 5.5f / 5.f, 0.f});
         scene.addModel(car);
 
         CL::Model cow = CL::loadOBJ("example/assets/cow.obj");
-        cow.transform = CL::Model::Transform({-2.0f, -1.1f, 8.8f}, {0.f, clm::PI * 2.f / 3.f, 0.f}, {0.7f, 0.7f, 0.7f});
+        cow.transform = CL::Model::Transform({1.3f, -1.1f, 8.8f}, {0.f, clm::PI * 2.f / 3.f, 0.f}, {0.7f, 0.7f, 0.7f});
         scene.addModel(cow);
 
         CL::Model ground = CL::loadOBJ("example/assets/cube.obj");

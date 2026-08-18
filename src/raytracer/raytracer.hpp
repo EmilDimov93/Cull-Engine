@@ -13,6 +13,8 @@
 
 namespace CL
 {
+    static constexpr float BIAS_EPSILON = 1e-6f;
+
     struct Ray
     {
         clm::vec3 origin;
