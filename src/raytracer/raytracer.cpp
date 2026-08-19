@@ -278,6 +278,19 @@ namespace CL
 
                         HitData hit;
 
+                        auto getBaseColor = [](const Material &material, const clm::uvec2 &uv) -> clm::vec4
+                        {
+                            clm::vec4 baseColor = material.color;
+                            if (material.texturePixels.size() > 0)
+                            {
+                                baseColor = clm::vec4(material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 0],
+                                                      material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 1],
+                                                      material.texturePixels[(uv.y * material.textureSize.x + uv.x) * 4.f + 2],
+                                                      material.color.w);
+                            }
+                            return baseColor;
+                        };
+
                         clm::vec4 accumulatedColor(0.f, 0.f, 0.f, 0.f);
                         for (uint32_t i = 0; i < MAX_RAYS_PER_PIXEL; i++)
                         {
@@ -285,18 +298,8 @@ namespace CL
 
                             if (hit)
                             {
-                                // Find base color
-                                const Material &material = bvh.materials[hit.materialIndex];
-                                clm::vec4 baseColor = material.color;
-                                if (material.texturePixels.size() > 0)
-                                {
-                                    baseColor = clm::vec4(material.texturePixels[(hit.uv.y * material.textureSize.x + hit.uv.x) * 4.f + 0],
-                                                          material.texturePixels[(hit.uv.y * material.textureSize.x + hit.uv.x) * 4.f + 1],
-                                                          material.texturePixels[(hit.uv.y * material.textureSize.x + hit.uv.x) * 4.f + 2],
-                                                          material.color.w);
-                                }
+                                clm::vec4 baseColor = getBaseColor(bvh.materials[hit.materialIndex], hit.uv);
 
-                                // Accumulate color
                                 const float accumulatedAlpha01 = accumulatedColor.w;
                                 if (baseColor.w > 254.f)
                                 {
@@ -389,7 +392,8 @@ namespace CL
 
                             if (reflectedHit && bvh.materials[reflectedHit.materialIndex].color.w > 254.f)
                             {
-                                pixelColor = clm::lerp(pixelColor, bvh.materials[reflectedHit.materialIndex].color, bvh.materials[hit.materialIndex].metallic);
+                                clm::vec4 reflectionColor = getBaseColor(bvh.materials[reflectedHit.materialIndex], reflectedHit.uv);
+                                pixelColor = clm::lerp(pixelColor, reflectionColor, bvh.materials[hit.materialIndex].metallic);
 
                                 pixelColor = pixelColor * clm::vec4(shade(reflectedHit), 1.f);
                             }
