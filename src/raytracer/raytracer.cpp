@@ -13,7 +13,7 @@
 
 namespace CL
 {
-    [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayVector, const std::array<Vertex, 3> &vertices, clm::vec3 &outIntersectionPoint, bool &outIsFrontFace)
+    [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayDir, const std::array<Vertex, 3> &vertices, clm::vec3 &outIntersectionPoint, bool &outIsFrontFace)
     {
         constexpr float EPSILON = 1e-7f;
         constexpr float RAY_MIN_DISTANCE = 1e-3f;
@@ -21,7 +21,7 @@ namespace CL
         const clm::vec3 edge01 = vertices[1].pos - vertices[0].pos;
         const clm::vec3 edge02 = vertices[2].pos - vertices[0].pos;
 
-        const clm::vec3 rayCrossEdge02 = rayVector.cross(edge02);
+        const clm::vec3 rayCrossEdge02 = rayDir.cross(edge02);
 
         const float determinant = edge01.dot(rayCrossEdge02);
 
@@ -39,7 +39,7 @@ namespace CL
 
         const clm::vec3 originCrossEdge01 = vertex0ToRayOrigin.cross(edge01);
 
-        const float barycentricV = inverseDeterminant * rayVector.dot(originCrossEdge01);
+        const float barycentricV = inverseDeterminant * rayDir.dot(originCrossEdge01);
 
         if (barycentricV < 0.0 || barycentricU + barycentricV > 1.0)
             return false;
@@ -48,7 +48,7 @@ namespace CL
 
         if (rayDistance > RAY_MIN_DISTANCE)
         {
-            outIntersectionPoint = rayOrigin + (rayVector.normalized() * (rayDistance * rayVector.length()));
+            outIntersectionPoint = rayOrigin + rayDir * rayDistance;
             return true;
         }
         else
@@ -433,6 +433,6 @@ namespace CL
         file.close();
 
         if (shouldOpen)
-            std::system("start build\\result.ppm");
+            std::system((std::string("start ") + filePath).c_str());
     }
 }
