@@ -28,8 +28,8 @@ int main()
 
         CL::Editor editor(scene, {1000u, 1000u});
 
-        editor.setVignetteStrength(0.5f);
-        editor.setResultImageSize({1000u, 1000u});
+        editor.vignetteStrength = 0.5f;
+        editor.resultImageSize = {1000u, 1000u};
 
         editor.run();
     }

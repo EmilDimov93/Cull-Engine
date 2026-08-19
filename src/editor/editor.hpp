@@ -5,14 +5,13 @@
 
 #include "../math/clm.hpp"
 
-#include "vert.hpp"
+#include "vertexShader.hpp"
+#include "window.hpp"
 
 #include "../scene/scene.hpp"
 #include "../attachments.hpp"
 
 #include "../raytracer/raytracer.hpp"
-
-#include "window.hpp"
 
 #include <vector>
 #include <cstdint>
@@ -30,10 +29,12 @@ namespace CL
     public:
         Editor(const Scene &scene, clm::uvec2 windowSize = {500, 500});
 
-        void setVignetteStrength(float vignetteStrength) { this->vignetteStrength = vignetteStrength; }
-        void setResultImageSize(clm::uvec2 size) { resultImageSize = size; }
-
         void run();
+
+        // Ray-Tracer data
+        clm::uvec2 resultImageSize = {100u, 100u};
+        float vignetteStrength = 0.f;
+        uint32_t bvhDepth = 10u;
 
     private:
         Scene scene;
@@ -82,10 +83,5 @@ namespace CL
 
         uint32_t findHoveredModel(clm::ivec2 mousePos);
         void drawMesh(const Mesh &mesh, clm::vec4 color, DepthAttachment &depthAtt, bool isSolid, bool hasShading);
-
-        // Ray-Tracer
-        clm::uvec2 resultImageSize = {100u, 100u};
-        float vignetteStrength = 0.f;
-        uint32_t bvhDepth = 10u;
     };
 }
