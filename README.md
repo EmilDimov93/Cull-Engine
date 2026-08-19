@@ -6,9 +6,13 @@
 
 A CPU rendering engine pairing a real-time scene editor with a multi-threaded offline ray tracer.
 
-| Editor | Result |
-| --- | --- |
-| <img width="994" height="991" alt="beetleCowEditor" src="https://github.com/user-attachments/assets/d04780f2-61da-4cf0-b6d3-43cdf62b6a3c" /> | <img width="1000" height="1000" alt="beetleCowRayTracer" src="https://github.com/user-attachments/assets/0f818a01-01b5-46df-a384-5107157c3524" /> | 
+| Result |
+| --- |
+ |  <img width="4000" height="2829" alt="bothCars3" src="https://github.com/user-attachments/assets/b97ede6a-e4c6-4a18-a647-41c15b9169b2" /> |
+
+| Editor |
+| --- |
+| <img width="1995" height="979" alt="image" src="https://github.com/user-attachments/assets/2e9d100f-cb2e-4ea7-83e5-b84a9bd9266a" /> |
 
 ⚠️ **Warning:** Cull Engine is in active development and it's not ready for use. If you want to experiment with it anyway, refer to [run.ps1](run.ps1) and [example.cpp](example/example.cpp)
 
