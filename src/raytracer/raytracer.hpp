@@ -13,8 +13,6 @@
 
 namespace CL
 {
-    static constexpr float BIAS_EPSILON = 1e-6f;
-
     struct Ray
     {
         clm::vec3 origin;
@@ -48,6 +46,4 @@ namespace CL
     [[nodiscard]] uint32_t castRay(const std::vector<Model> &models, const Ray &ray);
 
     ColorAttachment renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth);
-
-    void exportAttachmentPPM(const ColorAttachment &colorAtt, const std::string &filePath, bool shouldOpen);
 }

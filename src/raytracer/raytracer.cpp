@@ -4,7 +4,6 @@
 #include "raytracer.hpp"
 
 #include <thread>
-#include <fstream>
 #include <array>
 #include <random>
 #include <cmath>
@@ -13,7 +12,21 @@
 
 namespace CL
 {
-    [[nodiscard]] bool RayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayDir, const std::array<Vertex, 3> &vertices, clm::vec3 &outIntersectionPoint, bool &outIsFrontFace)
+    static constexpr float BIAS_EPSILON = 1e-6f;
+
+    struct HitData
+    {
+        bool hasHit = false;
+        uint32_t materialIndex = INVALID_INDEX;
+        clm::vec3 normal;
+        clm::uvec2 uv;
+        clm::vec3 intersectionPoint;
+        bool isFrontFace;
+
+        explicit operator bool() const { return hasHit; }
+    };
+
+    [[nodiscard]] bool rayIntersectsTriangle(const clm::vec3 &rayOrigin, const clm::vec3 &rayDir, const std::array<Vertex, 3> &vertices, clm::vec3 &outIntersectionPoint, bool &outIsFrontFace)
     {
         constexpr float EPSILON = 1e-7f;
         constexpr float RAY_MIN_DISTANCE = 1e-3f;
@@ -57,36 +70,6 @@ namespace CL
         }
     }
 
-    std::vector<uint32_t> traverseBVH(const std::vector<Node> &nodes, const clm::vec3 &origin, const clm::vec3 &invDir)
-    {
-        std::vector<uint32_t> hitLeaves;
-
-        uint32_t stack[64];
-        int stackPointer = 0;
-        stack[stackPointer++] = 0;
-
-        while (stackPointer > 0)
-        {
-            uint32_t index = stack[--stackPointer];
-
-            if (!nodes[index].volume.intersectsRay(origin, invDir))
-                continue;
-
-            uint32_t leftIndex = 2 * index + 1;
-
-            if (leftIndex > nodes.size() - 1)
-            {
-                hitLeaves.push_back(index);
-                continue;
-            }
-
-            stack[stackPointer++] = leftIndex;
-            stack[stackPointer++] = leftIndex + 1;
-        }
-
-        return hitLeaves;
-    }
-
     clm::vec3 computeBarycentric(const std::array<Vertex, 3> &vertices, clm::vec3 p)
     {
         clm::vec3 edge1 = vertices[1].pos - vertices[0].pos;
@@ -108,23 +91,11 @@ namespace CL
         return clm::vec3(weightA, weightB, weightC);
     }
 
-    struct HitData
-    {
-        bool hasHit = false;
-        uint32_t materialIndex = INVALID_INDEX;
-        clm::vec3 normal;
-        clm::uvec2 uv;
-        clm::vec3 intersectionPoint;
-        bool isFrontFace;
-
-        explicit operator bool() const { return hasHit; }
-    };
-
     [[nodiscard]] HitData castRayBVH(const BVH &bvh, const Ray &ray)
     {
         HitData hit;
 
-        std::vector<uint32_t> hitLeaves = traverseBVH(bvh.nodes, ray.origin, clm::vec3(1 / ray.direction.x, 1 / ray.direction.y, 1 / ray.direction.z));
+        std::vector<uint32_t> hitLeaves = bvh.getHitLeaves(ray.origin, ray.direction);
 
         uint32_t pickedTriangle = INVALID_INDEX;
         uint32_t pickedLeave = INVALID_INDEX;
@@ -138,7 +109,7 @@ namespace CL
             {
                 clm::vec3 intersectionPoint;
                 bool isFrontFace;
-                if (RayIntersectsTriangle(ray.origin, ray.direction, bvh.nodes[leave].triangles[i].vertices, intersectionPoint, isFrontFace))
+                if (rayIntersectsTriangle(ray.origin, ray.direction, bvh.nodes[leave].triangles[i].vertices, intersectionPoint, isFrontFace))
                 {
                     const float distance = (intersectionPoint - ray.origin).length();
                     if (distance < closestDistance)
@@ -207,7 +178,7 @@ namespace CL
 
                     clm::vec3 intersectionPoint;
                     bool isFrontFace;
-                    if (RayIntersectsTriangle(ray.origin, ray.direction, vertices, intersectionPoint, isFrontFace))
+                    if (rayIntersectsTriangle(ray.origin, ray.direction, vertices, intersectionPoint, isFrontFace))
                     {
                         const float distance = (intersectionPoint - ray.origin).length();
                         if (distance < closestDistance)
@@ -255,7 +226,7 @@ namespace CL
     {
         ColorAttachment colorAtt(imageSize);
 
-        BVH bvh = constructBVH(scene.models, bvhDepth);
+        BVH bvh(scene.models, bvhDepth);
 
         {
             const unsigned int threadCount = std::max(1u, std::thread::hardware_concurrency());
@@ -416,23 +387,5 @@ namespace CL
         applyPostEffects(colorAtt, vignetteStrength);
 
         return colorAtt;
-    }
-
-    void exportAttachmentPPM(const ColorAttachment &colorAtt, const std::string &filePath, bool shouldOpen)
-    {
-        std::ofstream file(filePath, std::ios::binary);
-
-        if (!file)
-            throw std::runtime_error("Failed to open .ppm file");
-
-        file << "P6\n"
-             << colorAtt.size.x << ' ' << colorAtt.size.y << "\n255\n";
-
-        file.write(reinterpret_cast<const char *>(colorAtt.image.data()), static_cast<std::streamsize>(colorAtt.size.x) * static_cast<std::streamsize>(colorAtt.size.y) * 3);
-
-        file.close();
-
-        if (shouldOpen)
-            std::system((std::string("start ") + filePath).c_str());
     }
 }

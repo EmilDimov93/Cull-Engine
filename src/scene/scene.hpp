@@ -48,24 +48,26 @@ namespace CL
         Mesh(const std::vector<Vertex> &vertices, const std::vector<uint32_t> indices, uint32_t materialIndex) : vertices(vertices), indices(indices), materialIndex(materialIndex) {}
     };
 
+    struct Transform
+    {
+        clm::vec3 pos;
+        clm::quaternion rot;
+        clm::vec3 scale;
+
+        clm::mat4 mat() const
+        {
+            return clm::mat4::translation(pos.x, pos.y, pos.z) * rot.mat() * clm::mat4::scale(scale.x, scale.y, scale.z);
+        };
+
+        Transform(clm::vec3 pos = {}, clm::vec3 rot = {}, clm::vec3 scale = {1.f, 1.f, 1.f}) : pos(pos), rot(rot), scale(scale) {}
+    };
+
     struct Model
     {
         std::vector<Mesh> meshes;
         std::vector<Material> materials;
 
-        struct Transform
-        {
-            clm::vec3 pos;
-            clm::quaternion rot;
-            clm::vec3 scale;
-
-            clm::mat4 mat() const
-            {
-                return clm::mat4::translation(pos.x, pos.y, pos.z) * rot.mat() * clm::mat4::scale(scale.x, scale.y, scale.z);
-            };
-
-            Transform(clm::vec3 pos = {}, clm::vec3 rot = {}, clm::vec3 scale = {1.f, 1.f, 1.f}) : pos(pos), rot(rot), scale(scale) {}
-        } transform;
+        Transform transform;
 
         Model(const std::vector<Mesh> &meshes, const std::vector<Material> &materials, Transform transform = Transform()) : meshes(meshes), materials(materials), transform(transform) {}
         Model() {}
@@ -104,6 +106,19 @@ namespace CL
             if (index > models.size() - 1)
                 throw std::runtime_error("Invalid index");
             models.erase(models.begin() + index);
+        }
+
+        uint32_t addPointLight(const PointLight &pointLight)
+        {
+            lights.push_back(pointLight);
+            return static_cast<uint32_t>(lights.size() - 1);
+        }
+
+        void removePointLight(uint32_t index)
+        {
+            if (index > lights.size() - 1)
+                throw std::runtime_error("Invalid index");
+            lights.erase(lights.begin() + index);
         }
     };
 }

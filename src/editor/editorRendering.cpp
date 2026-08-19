@@ -197,11 +197,11 @@ namespace CL
 
             for (const Mesh &mesh : gizmoArrow.meshes)
             {
-                vertShader.updatePushConstant(Model::Transform(pos, {0.f, 0.f, -clm::PI / 2}, scale).mat());
+                vertShader.updatePushConstant(Transform(pos, {0.f, 0.f, -clm::PI / 2}, scale).mat());
                 drawMesh(mesh, {255.f, 0.f, 0.f, 255.f}, depthAttGizmo, true, false);
-                vertShader.updatePushConstant(Model::Transform(pos, {0.f, 0.f, 0.f}, scale).mat());
+                vertShader.updatePushConstant(Transform(pos, {0.f, 0.f, 0.f}, scale).mat());
                 drawMesh(mesh, {0.f, 255.f, 0.f, 255.f}, depthAttGizmo, true, false);
-                vertShader.updatePushConstant(Model::Transform(pos, {-clm::PI / 2, 0.f, 0.f}, scale).mat());
+                vertShader.updatePushConstant(Transform(pos, {-clm::PI / 2, 0.f, 0.f}, scale).mat());
                 drawMesh(mesh, {0.f, 0.f, 255.f, 255.f}, depthAttGizmo, true, false);
             }
         }

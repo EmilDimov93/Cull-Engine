@@ -7,10 +7,11 @@
 
 #include <vector>
 #include <limits>
+#include <fstream>
+#include <stdexcept>
 
 namespace CL
 {
-
     template <typename T>
     struct Attachment
     {
@@ -77,4 +78,22 @@ namespace CL
             return image[y * size.x + x];
         }
     };
+
+    inline void exportAttachmentPPM(const ColorAttachment &colorAtt, const std::string &filePath, bool shouldOpen)
+    {
+        std::ofstream file(filePath, std::ios::binary);
+
+        if (!file)
+            throw std::runtime_error("Failed to open .ppm file");
+
+        file << "P6\n"
+             << colorAtt.size.x << ' ' << colorAtt.size.y << "\n255\n";
+
+        file.write(reinterpret_cast<const char *>(colorAtt.image.data()), static_cast<std::streamsize>(colorAtt.size.x) * static_cast<std::streamsize>(colorAtt.size.y) * 3);
+
+        file.close();
+
+        if (shouldOpen)
+            std::system((std::string("start ") + filePath).c_str());
+    }
 }

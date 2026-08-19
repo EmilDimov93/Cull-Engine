@@ -18,7 +18,7 @@ int main()
         scene.addModel(car);
 
         CL::Model cow = CL::loadOBJ("example/assets/cow.obj");
-        cow.transform = CL::Model::Transform({1.3f, -1.1f, 8.8f}, {0.f, clm::PI * 2.f / 3.f, 0.f}, {0.7f, 0.7f, 0.7f});
+        cow.transform = CL::Transform({1.3f, -1.1f, 8.8f}, {0.f, clm::PI * 2.f / 3.f, 0.f}, {0.7f, 0.7f, 0.7f});
         scene.addModel(cow);
 
         CL::Model ground = CL::loadOBJ("example/assets/cube.obj");

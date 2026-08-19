@@ -120,7 +120,6 @@ namespace CL
     struct Node
     {
         AABB volume;
-
         std::vector<Triangle> triangles;
     };
 
@@ -128,148 +127,174 @@ namespace CL
     {
         std::vector<Node> nodes;
         std::vector<Material> materials;
-    };
 
-    BVH constructBVH(const std::vector<Model> &models, uint32_t depth)
-    {
-        if (depth == 0)
-            throw std::runtime_error("Invalid BVH depth");
-
-        BVH bvh;
-
-        clm::vec3 min(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
-        clm::vec3 max(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
-
-        static constexpr float EPSILON = 1e-4f;
-
-        for (const Model &model : models)
+        BVH(const std::vector<Model> &models, uint32_t depth)
         {
-            clm::mat4 mat = model.transform.mat();
-            for (const Mesh &mesh : model.meshes)
+            if (depth == 0)
+                throw std::runtime_error("Invalid BVH depth");
+
+            clm::vec3 min(std::numeric_limits<float>::max(), std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
+            clm::vec3 max(std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest(), std::numeric_limits<float>::lowest());
+
+            static constexpr float EPSILON = 1e-4f;
+
+            for (const Model &model : models)
             {
-                for (const Vertex &v : mesh.vertices)
+                clm::mat4 mat = model.transform.mat();
+                for (const Mesh &mesh : model.meshes)
                 {
-                    clm::vec3 world = (mat * clm::vec4(v.pos, 1.f)).xyz();
+                    for (const Vertex &v : mesh.vertices)
+                    {
+                        clm::vec3 world = (mat * clm::vec4(v.pos, 1.f)).xyz();
 
-                    if (min.x > world.x - EPSILON)
-                        min.x = world.x - EPSILON;
-                    if (min.y > world.y - EPSILON)
-                        min.y = world.y - EPSILON;
-                    if (min.z > world.z - EPSILON)
-                        min.z = world.z - EPSILON;
+                        if (min.x > world.x - EPSILON)
+                            min.x = world.x - EPSILON;
+                        if (min.y > world.y - EPSILON)
+                            min.y = world.y - EPSILON;
+                        if (min.z > world.z - EPSILON)
+                            min.z = world.z - EPSILON;
 
-                    if (max.x < world.x + EPSILON)
-                        max.x = world.x + EPSILON;
-                    if (max.y < world.y + EPSILON)
-                        max.y = world.y + EPSILON;
-                    if (max.z < world.z + EPSILON)
-                        max.z = world.z + EPSILON;
+                        if (max.x < world.x + EPSILON)
+                            max.x = world.x + EPSILON;
+                        if (max.y < world.y + EPSILON)
+                            max.y = world.y + EPSILON;
+                        if (max.z < world.z + EPSILON)
+                            max.z = world.z + EPSILON;
+                    }
                 }
             }
-        }
 
-        bvh.nodes.resize((1u << depth) - 1);
+            nodes.resize((1u << depth) - 1);
 
-        bvh.nodes[0].volume = AABB(min, max);
+            nodes[0].volume = AABB(min, max);
 
-        auto left = [](uint32_t index)
-        {
-            return 2 * index + 1;
-        };
-
-        auto right = [](uint32_t index)
-        {
-            return 2 * index + 2;
-        };
-
-        auto subDivide = [&](uint32_t index)
-        {
-            const AABB &full = bvh.nodes[index].volume;
-
-            float xLen = full.max.x - full.min.x;
-            float yLen = full.max.y - full.min.y;
-            float zLen = full.max.z - full.min.z;
-
-            auto midPoint = [](float min, float max)
+            auto left = [](uint32_t index)
             {
-                return min + (max - min) / 2;
+                return 2 * index + 1;
             };
 
-            clm::vec3 leftMax = full.max;
-            clm::vec3 rightMin = full.min;
-
-            if (xLen >= yLen && xLen >= zLen)
+            auto right = [](uint32_t index)
             {
-                const float mid = midPoint(full.min.x, full.max.x);
-                leftMax.x = mid;
-                rightMin.x = mid;
-            }
-            else if (yLen >= xLen && yLen >= zLen)
-            {
-                const float mid = midPoint(full.min.y, full.max.y);
-                leftMax.y = mid;
-                rightMin.y = mid;
-            }
-            else
-            {
-                const float mid = midPoint(full.min.z, full.max.z);
-                leftMax.z = mid;
-                rightMin.z = mid;
-            }
+                return 2 * index + 2;
+            };
 
-            bvh.nodes[left(index)].volume = AABB(full.min, leftMax);
-            bvh.nodes[right(index)].volume = AABB(rightMin, full.max);
-        };
-
-        for (uint32_t i = 0; i < depth - 1; i++)
-        {
-            for (uint32_t j = 0; j < (1u << i); j++)
+            auto subDivide = [&](uint32_t index)
             {
-                subDivide((1u << i) - 1 + j);
-            }
-        }
+                const AABB &full = nodes[index].volume;
 
-        auto addTriangle = [&](auto &&self, const std::array<Vertex, 3> &vertices, uint32_t materialIndex, uint32_t i)
-        {
-            if (left(i) > bvh.nodes.size() - 1)
-            {
-                bvh.nodes[i].triangles.emplace_back(vertices, materialIndex);
+                float xLen = full.max.x - full.min.x;
+                float yLen = full.max.y - full.min.y;
+                float zLen = full.max.z - full.min.z;
 
-                return;
-            }
-
-            if (bvh.nodes[left(i)].volume.intersectsTriangle(vertices))
-            {
-                self(self, vertices, materialIndex, left(i));
-            }
-
-            if (bvh.nodes[right(i)].volume.intersectsTriangle(vertices))
-            {
-                self(self, vertices, materialIndex, right(i));
-            }
-        };
-
-        uint32_t startMaterialIndex = 0;
-        for (const Model &model : models)
-        {
-            clm::mat4 mat = model.transform.mat();
-            for (const Mesh &mesh : model.meshes)
-            {
-                std::array<Vertex, 3> vertices;
-                for (uint32_t i = 0; i < mesh.indices.size(); i++)
+                auto midPoint = [](float min, float max)
                 {
-                    vertices[i % 3].pos = (mat * clm::vec4(mesh.vertices[mesh.indices[i]].pos, 1.f)).xyz();
-                    vertices[i % 3].normal = model.transform.rot * mesh.vertices[mesh.indices[i]].normal;
-                    vertices[i % 3].tex = mesh.vertices[mesh.indices[i]].tex;
-                    if (i % 3 == 2)
-                        addTriangle(addTriangle, vertices, startMaterialIndex + mesh.materialIndex, 0);
+                    return min + (max - min) / 2;
+                };
+
+                clm::vec3 leftMax = full.max;
+                clm::vec3 rightMin = full.min;
+
+                if (xLen >= yLen && xLen >= zLen)
+                {
+                    const float mid = midPoint(full.min.x, full.max.x);
+                    leftMax.x = mid;
+                    rightMin.x = mid;
+                }
+                else if (yLen >= xLen && yLen >= zLen)
+                {
+                    const float mid = midPoint(full.min.y, full.max.y);
+                    leftMax.y = mid;
+                    rightMin.y = mid;
+                }
+                else
+                {
+                    const float mid = midPoint(full.min.z, full.max.z);
+                    leftMax.z = mid;
+                    rightMin.z = mid;
+                }
+
+                nodes[left(index)].volume = AABB(full.min, leftMax);
+                nodes[right(index)].volume = AABB(rightMin, full.max);
+            };
+
+            for (uint32_t i = 0; i < depth - 1; i++)
+            {
+                for (uint32_t j = 0; j < (1u << i); j++)
+                {
+                    subDivide((1u << i) - 1 + j);
                 }
             }
 
-            bvh.materials.insert(bvh.materials.end(), model.materials.begin(), model.materials.end());
-            startMaterialIndex = bvh.materials.size();
+            auto addTriangle = [&](auto &&self, const std::array<Vertex, 3> &vertices, uint32_t materialIndex, uint32_t i)
+            {
+                if (left(i) > nodes.size() - 1)
+                {
+                    nodes[i].triangles.emplace_back(vertices, materialIndex);
+
+                    return;
+                }
+
+                if (nodes[left(i)].volume.intersectsTriangle(vertices))
+                {
+                    self(self, vertices, materialIndex, left(i));
+                }
+
+                if (nodes[right(i)].volume.intersectsTriangle(vertices))
+                {
+                    self(self, vertices, materialIndex, right(i));
+                }
+            };
+
+            uint32_t startMaterialIndex = 0;
+            for (const Model &model : models)
+            {
+                clm::mat4 mat = model.transform.mat();
+                for (const Mesh &mesh : model.meshes)
+                {
+                    std::array<Vertex, 3> vertices;
+                    for (uint32_t i = 0; i < mesh.indices.size(); i++)
+                    {
+                        vertices[i % 3].pos = (mat * clm::vec4(mesh.vertices[mesh.indices[i]].pos, 1.f)).xyz();
+                        vertices[i % 3].normal = model.transform.rot * mesh.vertices[mesh.indices[i]].normal;
+                        vertices[i % 3].tex = mesh.vertices[mesh.indices[i]].tex;
+                        if (i % 3 == 2)
+                            addTriangle(addTriangle, vertices, startMaterialIndex + mesh.materialIndex, 0);
+                    }
+                }
+
+                materials.insert(materials.end(), model.materials.begin(), model.materials.end());
+                startMaterialIndex = materials.size();
+            }
         }
 
-        return bvh;
-    }
+        std::vector<uint32_t> getHitLeaves(const clm::vec3 &rayOrigin, const clm::vec3 &rayDir) const
+        {
+            std::vector<uint32_t> hitLeaves;
+
+            uint32_t stack[64];
+            int stackPointer = 0;
+            stack[stackPointer++] = 0;
+
+            while (stackPointer > 0)
+            {
+                uint32_t index = stack[--stackPointer];
+
+                if (!nodes[index].volume.intersectsRay(rayOrigin, clm::vec3(1.f / rayDir.x, 1.f / rayDir.y, 1.f / rayDir.z)))
+                    continue;
+
+                uint32_t leftIndex = 2 * index + 1;
+
+                if (leftIndex > nodes.size() - 1)
+                {
+                    hitLeaves.push_back(index);
+                    continue;
+                }
+
+                stack[stackPointer++] = leftIndex;
+                stack[stackPointer++] = leftIndex + 1;
+            }
+
+            return hitLeaves;
+        }
+    };
 }
