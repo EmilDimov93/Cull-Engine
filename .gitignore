@@ -2,6 +2,7 @@
 build/
 logo/
 early_dev/
+testing/
 conventions.md
 desktop.ini
 git.ps1

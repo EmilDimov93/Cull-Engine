@@ -6,6 +6,8 @@
 #include <thread>
 #include <fstream>
 #include <array>
+#include <random>
+#include <cmath>
 
 #include "bvh.hpp"
 
@@ -332,9 +334,8 @@ namespace CL
                             }
                         }
 
-                        if (hit)
+                        auto shade = [&](const HitData hit) -> clm::vec3
                         {
-                            // Shade base color
                             clm::vec3 accumulatedRadiance = clm::vec3(1.f, 1.f, 1.f) * scene.ambient;
 
                             {
@@ -345,34 +346,55 @@ namespace CL
 
                             for (const PointLight &light : scene.lights)
                             {
-                                HitData shadowHit = castRayBVH(bvh, Ray(hit.intersectionPoint + hit.normal * BIAS_EPSILON, light.pos));
+                                clm::vec3 surfaceToLightDir = light.pos - hit.intersectionPoint;
+                                const float distance = surfaceToLightDir.length();
+                                surfaceToLightDir = surfaceToLightDir.normalized();
+
+                                const float dot = std::max(hit.normal.dot(surfaceToLightDir), 0.0f);
+                                if (dot <= 0.0f)
+                                    continue;
+
+                                HitData shadowHit = castRayBVH(bvh, Ray(hit.intersectionPoint + hit.normal * BIAS_EPSILON, surfaceToLightDir));
 
                                 if (!shadowHit || bvh.materials[shadowHit.materialIndex].color.w < 254.f)
                                 {
-                                    clm::vec3 surfaceToLightDir = light.pos - hit.intersectionPoint;
-                                    const float distance = surfaceToLightDir.length();
-                                    surfaceToLightDir = surfaceToLightDir.normalized();
-
-                                    const float dot = std::max(hit.normal.dot(surfaceToLightDir), 0.0f);
-                                    if (dot <= 0.0f)
-                                        continue;
-
                                     const float attenuation = 1.0f / (distance * distance);
                                     accumulatedRadiance += light.color * light.intensity * dot * attenuation;
                                 }
                             }
 
-                            pixelColor = pixelColor * clm::vec4(accumulatedRadiance, 1.f);
-                        }
+                            return accumulatedRadiance;
+                        };
 
                         if (hit)
+                            pixelColor = pixelColor * clm::vec4(shade(hit), 1.f);
+
+                        if (hit && bvh.materials[hit.materialIndex].metallic > 0.f)
                         {
                             clm::vec3 reflectedDir = ray.direction - hit.normal * 2.f * (ray.direction.dot(hit.normal));
 
-                            HitData reflectedHitData = castRayBVH(bvh, Ray(hit.intersectionPoint + hit.normal * BIAS_EPSILON, reflectedDir));
+                            {
+                                // Roughness
+                                static thread_local std::mt19937 engine(std::random_device{}());
+                                static thread_local std::uniform_real_distribution<float> unitDistribution(0.0f, 1.0f);
 
-                            if (reflectedHitData)
-                                pixelColor = clm::lerp(pixelColor, bvh.materials[reflectedHitData.materialIndex].color, bvh.materials[hit.materialIndex].metallic);
+                                clm::vec3 offset(unitDistribution(engine), unitDistribution(engine), unitDistribution(engine));
+                                offset = offset.normalized();
+                                offset = offset * bvh.materials[hit.materialIndex].roughness;
+
+                                reflectedDir = (reflectedDir + offset).normalized();
+                            }
+
+                            HitData reflectedHit = castRayBVH(bvh, Ray(hit.intersectionPoint + hit.normal * BIAS_EPSILON, reflectedDir));
+
+                            if (reflectedHit && bvh.materials[reflectedHit.materialIndex].color.w > 254.f)
+                            {
+                                pixelColor = clm::lerp(pixelColor, bvh.materials[reflectedHit.materialIndex].color, bvh.materials[hit.materialIndex].metallic);
+
+                                pixelColor = pixelColor * clm::vec4(shade(reflectedHit), 1.f);
+                            }
+                            else
+                                pixelColor = clm::lerp(pixelColor, clm::vec4(scene.clearColor, 1.f), bvh.materials[hit.materialIndex].metallic);
                         }
 
                         colorAtt.setPixel(pixelX, pixelY, pixelColor);

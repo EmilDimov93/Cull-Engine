@@ -35,7 +35,7 @@ namespace CL
         std::vector<uint8_t> texturePixels;
         clm::uvec2 textureSize;
 
-        constexpr Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}, float roughness = 0.5f, float metallic = 0.f) : color(color), roughness(roughness), metallic(metallic) {}
+        constexpr Material(clm::vec4 color = {255.f, 255.f, 255.f, 255.f}, float roughness = 0.f, float metallic = 0.f) : color(color), roughness(roughness), metallic(metallic) {}
     };
 
     struct Mesh

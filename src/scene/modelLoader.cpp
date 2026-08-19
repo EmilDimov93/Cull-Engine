@@ -77,7 +77,7 @@ namespace CL
                 else if (line.starts_with("Pr ") && !currentMat.empty())
                 {
                     std::stringstream ss(line.substr(3));
-                    float roughness = 0.5f;
+                    float roughness = 0.0f;
                     ss >> roughness;
                     materials[currentMat].roughness = roughness;
                 }
