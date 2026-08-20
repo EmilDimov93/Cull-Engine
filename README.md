@@ -3,15 +3,15 @@
 ![Language](https://img.shields.io/badge/C%2B%2B-20-00599C)
 ![License](https://img.shields.io/badge/license-Apache--2.0-purple)
 
-A CPU rendering engine pairing a real-time scene editor with a multi-threaded offline ray tracer.
+A CPU rendering engine pairing a real-time scene editor with a multi-threaded offline ray-tracer.
 
 | Result |
 | --- |
-| <img width="4000" height="2829" alt="ray-traced" src="https://github.com/user-attachments/assets/b97ede6a-e4c6-4a18-a647-41c15b9169b2" /> |
+| <img alt="ray-traced" src="https://github.com/user-attachments/assets/b97ede6a-e4c6-4a18-a647-41c15b9169b2" /> |
 
 | Editor |
 | --- |
-| <img width="1995" height="979" alt="editor" src="https://github.com/user-attachments/assets/2e9d100f-cb2e-4ea7-83e5-b84a9bd9266a" /> |
+| <img alt="editor" src="https://github.com/user-attachments/assets/2e9d100f-cb2e-4ea7-83e5-b84a9bd9266a" /> |
 
 ## Two pipelines
 
