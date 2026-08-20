@@ -10,42 +10,51 @@ namespace clm
 {
     inline constexpr float PI = 3.14159265f;
 
-    struct ivec2
+    struct vec2
     {
-        int32_t x, y;
+        float x, y;
 
-        constexpr ivec2(int32_t x = 0, int32_t y = 0) : x(x), y(y) {}
+        constexpr vec2() : x(0.f), y(0.f) {}
+        constexpr vec2(float x, float y) : x(x), y(y) {}
+
+        [[nodiscard]] constexpr vec2 operator+(const vec2 &other)
+        {
+            return vec2(x + other.x, y + other.y);
+        }
     };
 
     struct uvec2
     {
         uint32_t x, y;
 
-        constexpr uvec2(uint32_t x = 0u, uint32_t y = 0u) : x(x), y(y) {}
+        constexpr uvec2() : x(0u), y(0u) {}
+        constexpr uvec2(uint32_t x, uint32_t y) : x(x), y(y) {}
 
         [[nodiscard]] constexpr uvec2 operator+(const uvec2 &other) const
         {
             return uvec2(x + other.x, y + other.y);
         }
 
-        [[nodiscard]] constexpr uvec2 operator*(const float &scalar) const
+        [[nodiscard]] constexpr vec2 operator*(float scalar) const
         {
-            return uvec2(x * scalar, y * scalar);
+            return vec2(static_cast<float>(x) * scalar, static_cast<float>(y) * scalar);
         }
     };
 
-    struct vec2
+    struct ivec2
     {
-        float x, y;
+        int32_t x, y;
 
-        constexpr vec2(float x = 0.f, float y = 0.f) : x(x), y(y) {}
+        constexpr ivec2() : x(0), y(0) {}
+        constexpr ivec2(int32_t x, int32_t y) : x(x), y(y) {}
     };
 
     struct vec3
     {
         float x, y, z;
 
-        constexpr vec3(float x = 0.f, float y = 0.f, float z = 0.f) : x(x), y(y), z(z) {}
+        constexpr vec3() : x(0.f), y(0.f), z(0.f) {}
+        constexpr vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 
         [[nodiscard]] constexpr vec3 operator*(const vec3 &other) const
         {
@@ -67,29 +76,29 @@ namespace clm
             return vec3(x - other.x, y - other.y, z - other.z);
         }
 
-        void constexpr operator+=(const vec3 &other)
+        constexpr void operator+=(const vec3 &other)
         {
             x += other.x;
             y += other.y;
             z += other.z;
         }
 
-        [[nodiscard]] vec3 constexpr operator*(float scalar) const
+        [[nodiscard]] constexpr vec3 operator*(float scalar) const
         {
             return vec3(x * scalar, y * scalar, z * scalar);
         }
 
-        [[nodiscard]] vec3 constexpr operator/(float scalar) const
+        [[nodiscard]] constexpr vec3 operator/(float scalar) const
         {
             return vec3(x / scalar, y / scalar, z / scalar);
         }
 
-        [[nodiscard]] constexpr float dot(vec3 other) const
+        [[nodiscard]] constexpr float dot(const vec3 &other) const
         {
             return x * other.x + y * other.y + z * other.z;
         }
 
-        [[nodiscard]] constexpr vec3 cross(vec3 other) const
+        [[nodiscard]] constexpr vec3 cross(const vec3 &other) const
         {
             return vec3(y * other.z - z * other.y,
                         z * other.x - x * other.z,
@@ -112,7 +121,8 @@ namespace clm
     {
         float x, y, z, w;
 
-        constexpr vec4(float x = 0.f, float y = 0.f, float z = 0.f, float w = 0.f) : x(x), y(y), z(z), w(w) {}
+        constexpr vec4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
+        constexpr vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w) {}
         constexpr vec4(vec3 v3, float w) : x(v3.x), y(v3.y), z(v3.z), w(w) {}
 
         [[nodiscard]] constexpr vec4 operator*(const vec4 &other) const
@@ -151,37 +161,17 @@ namespace clm
         }
     };
 
-    [[nodiscard]] constexpr float clamp(float value, float min, float max)
-    {
-        return value < min ? min : (max < value ? max : value);
-    }
-
-    [[nodiscard]] constexpr clm::vec4 clamp(const clm::vec4 &v, float min, float max)
-    {
-        return clm::vec4(clamp(v.x, min, max),
-                         clamp(v.y, min, max),
-                         clamp(v.z, min, max),
-                         clamp(v.w, min, max));
-    }
-
-    [[nodiscard]] constexpr clm::vec4 lerp(clm::vec4 a, clm::vec4 b, float factor)
-    {
-        return a * (1.f - factor) + b * factor;
-    }
-
     struct mat4
     {
-    private:
-        float mat[4][4] = {{1, 0, 0, 0},
-                           {0, 1, 0, 0},
-                           {0, 0, 1, 0},
-                           {0, 0, 0, 1}};
+        float mat[4][4] = {{1.f, 0.f, 0.f, 0.f},
+                           {0.f, 1.f, 0.f, 0.f},
+                           {0.f, 0.f, 1.f, 0.f},
+                           {0.f, 0.f, 0.f, 1.f}};
 
-    public:
         using Column = float[4];
 
-        constexpr Column &operator[](int col) { return mat[col]; }
-        constexpr const Column &operator[](int col) const { return mat[col]; }
+        [[nodiscard]] constexpr Column &operator[](int col) { return mat[col]; }
+        [[nodiscard]] constexpr const Column &operator[](int col) const { return mat[col]; }
 
         [[nodiscard]] constexpr mat4 operator+(const mat4 &other) const
         {
@@ -190,7 +180,7 @@ namespace clm
                 for (int row = 0; row < 4; ++row)
                     result.mat[col][row] = mat[col][row] + other.mat[col][row];
             return result;
-        };
+        }
 
         [[nodiscard]] constexpr mat4 operator-(const mat4 &other) const
         {
@@ -199,7 +189,7 @@ namespace clm
                 for (int row = 0; row < 4; ++row)
                     result.mat[col][row] = mat[col][row] - other.mat[col][row];
             return result;
-        };
+        }
 
         [[nodiscard]] constexpr mat4 operator*(const mat4 &other) const
         {
@@ -211,7 +201,7 @@ namespace clm
                                            mat[2][row] * other.mat[col][2] +
                                            mat[3][row] * other.mat[col][3];
             return result;
-        };
+        }
 
         [[nodiscard]] constexpr vec3 operator*(const vec3 &v) const
         {
@@ -228,7 +218,7 @@ namespace clm
                         mat[0][3] * v.x + mat[1][3] * v.y + mat[2][3] * v.z + mat[3][3] * v.w);
         }
 
-        [[nodiscard]] static constexpr inline mat4 translation(float x, float y, float z)
+        [[nodiscard]] static constexpr mat4 translation(float x, float y, float z)
         {
             mat4 m;
 
@@ -239,12 +229,12 @@ namespace clm
             return m;
         }
 
-        [[nodiscard]] static constexpr inline mat4 translation(vec3 t)
+        [[nodiscard]] static constexpr mat4 translation(vec3 t)
         {
             return translation(t.x, t.y, t.z);
         }
 
-        [[nodiscard]] static constexpr inline mat4 rotation(float x, float y, float z)
+        [[nodiscard]] static constexpr mat4 rotation(float x, float y, float z)
         {
             mat4 m;
 
@@ -270,7 +260,7 @@ namespace clm
             return m;
         }
 
-        [[nodiscard]] static constexpr inline mat4 scale(float x, float y, float z)
+        [[nodiscard]] static constexpr mat4 scale(float x, float y, float z)
         {
             mat4 m;
 
@@ -281,12 +271,12 @@ namespace clm
             return m;
         }
 
-        [[nodiscard]] static constexpr inline mat4 scale(float uniformScale)
+        [[nodiscard]] static constexpr mat4 scale(float uniformScale)
         {
             return scale(uniformScale, uniformScale, uniformScale);
         }
 
-        [[nodiscard]] static constexpr inline mat4 perspective(float fieldOfView, float aspectRatio, float zNear, float zFar)
+        [[nodiscard]] static constexpr mat4 perspective(float fieldOfView, float aspectRatio, float zNear, float zFar)
         {
             mat4 m;
 
@@ -294,7 +284,7 @@ namespace clm
 
             m[0][0] = f / aspectRatio;
             m[1][1] = f;
-            m[2][2] = (zFar + zNear) / (zNear - zFar);
+            m[2][2] = (zFar + zNear) / (zFar - zNear);
             m[3][2] = (2.f * zFar * zNear) / (zNear - zFar);
             m[2][3] = 1.f;
             m[3][3] = 0.f;
@@ -303,22 +293,13 @@ namespace clm
         }
     };
 
-    constexpr float unitToSignedRange(float unitValue)
-    {
-        return unitValue * 2.f - 1.f;
-    }
-
-    constexpr float signedToUnitRange(float signedValue)
-    {
-        return (signedValue + 1.f) / 2.f;
-    }
-
     struct quaternion
     {
         float w, x, y, z;
 
-        constexpr quaternion(float w = 1.f, float x = 0.f, float y = 0.f, float z = 0.f) : w(w), x(x), y(y), z(z) {}
-        constexpr quaternion(vec3 rot) : quaternion() { *this = rotate(rot); }
+        constexpr quaternion() : w(1.f), x(0.f), y(0.f), z(0.f) {}
+        constexpr quaternion(float w, float x, float y, float z) : w(w), x(x), y(y), z(z) {}
+        explicit constexpr quaternion(vec3 rot) : quaternion() { *this = rotate(rot); }
 
         [[nodiscard]] constexpr quaternion operator*(const quaternion &other) const
         {
@@ -398,4 +379,32 @@ namespace clm
             return result;
         }
     };
+
+    [[nodiscard]] constexpr float clamp(float value, float min, float max)
+    {
+        return value < min ? min : (max < value ? max : value);
+    }
+
+    [[nodiscard]] constexpr vec4 clamp(const vec4 &v, float min, float max)
+    {
+        return vec4(clamp(v.x, min, max),
+                    clamp(v.y, min, max),
+                    clamp(v.z, min, max),
+                    clamp(v.w, min, max));
+    }
+
+    [[nodiscard]] constexpr vec4 lerp(vec4 a, vec4 b, float factor)
+    {
+        return a * (1.f - factor) + b * factor;
+    }
+
+    [[nodiscard]] constexpr float unitToSignedRange(float unitValue)
+    {
+        return unitValue * 2.f - 1.f;
+    }
+
+    [[nodiscard]] constexpr float signedToUnitRange(float signedValue)
+    {
+        return (signedValue + 1.f) / 2.f;
+    }
 }

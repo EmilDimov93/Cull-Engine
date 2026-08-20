@@ -137,7 +137,7 @@ namespace CL
             clm::vec3 smoothNormal = vertices[0].normal * barycentric.x + vertices[1].normal * barycentric.y + vertices[2].normal * barycentric.z;
             hit.normal = smoothNormal.normalized();
 
-            clm::uvec2 texelCoord =
+            clm::vec2 texelCoord =
                 vertices[0].tex * barycentric.x +
                 vertices[1].tex * barycentric.y +
                 vertices[2].tex * barycentric.z;
