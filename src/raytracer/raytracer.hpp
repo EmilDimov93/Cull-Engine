@@ -45,5 +45,5 @@ namespace CL
 
     [[nodiscard]] uint32_t castRay(const std::vector<Model> &models, const Ray &ray);
 
-    ColorAttachment renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth);
+    ColorAttachment renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength);
 }

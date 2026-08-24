@@ -54,6 +54,7 @@ namespace clm
         float x, y, z;
 
         constexpr vec3() : x(0.f), y(0.f), z(0.f) {}
+        constexpr vec3(float v) : x(v), y(v), z(v) {}
         constexpr vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 
         [[nodiscard]] constexpr vec3 operator*(const vec3 &other) const

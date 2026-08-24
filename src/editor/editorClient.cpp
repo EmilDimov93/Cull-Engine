@@ -137,7 +137,7 @@ namespace CL
             if (window.isKeyPressed(GLFW_KEY_R))
             {
                 glfwSetWindowTitle(window, ("Cull Engine | Rendering..."));
-                exportAttachmentPPM(renderSceneRayTraced(resultImageSize, scene, FOV, vignetteStrength, bvhDepth), "build/result.ppm", true);
+                exportAttachmentPPM(renderSceneRayTraced(resultImageSize, scene, FOV, vignetteStrength), "build/result.ppm", true);
             }
 
             dt = static_cast<float>(std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - startTime).count());

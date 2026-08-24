@@ -34,7 +34,6 @@ namespace CL
         // Ray-Tracer data
         clm::uvec2 resultImageSize = {100u, 100u};
         float vignetteStrength = 0.f;
-        uint32_t bvhDepth = 10u;
 
     private:
         Scene scene;

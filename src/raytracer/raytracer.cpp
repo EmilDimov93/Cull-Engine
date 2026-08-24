@@ -222,11 +222,11 @@ namespace CL
         return true;
     }
 
-    ColorAttachment renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength, uint32_t bvhDepth)
+    ColorAttachment renderSceneRayTraced(clm::uvec2 imageSize, const Scene &scene, float fov, float vignetteStrength)
     {
         ColorAttachment colorAtt(imageSize);
 
-        BVH bvh(scene.models, bvhDepth);
+        BVH bvh(scene.models);
 
         {
             const unsigned int threadCount = std::max(1u, std::thread::hardware_concurrency());
