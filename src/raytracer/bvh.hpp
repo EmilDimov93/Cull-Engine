@@ -32,68 +32,6 @@ namespace CL
             max.z = std::max(max.z, point.z);
         }
 
-        bool intersectsTriangle(const std::array<Vertex, 3> &triangle) const
-        {
-            const clm::vec3 boxCenter = (min + max) * 0.5f;
-            const clm::vec3 halfExtents = (max - min) * 0.5f;
-
-            const clm::vec3 v0 = triangle[0].pos - boxCenter;
-            const clm::vec3 v1 = triangle[1].pos - boxCenter;
-            const clm::vec3 v2 = triangle[2].pos - boxCenter;
-
-            if (std::min({v0.x, v1.x, v2.x}) > halfExtents.x || std::max({v0.x, v1.x, v2.x}) < -halfExtents.x)
-                return false;
-            if (std::min({v0.y, v1.y, v2.y}) > halfExtents.y || std::max({v0.y, v1.y, v2.y}) < -halfExtents.y)
-                return false;
-            if (std::min({v0.z, v1.z, v2.z}) > halfExtents.z || std::max({v0.z, v1.z, v2.z}) < -halfExtents.z)
-                return false;
-
-            const clm::vec3 edge0 = v1 - v0;
-            const clm::vec3 edge1 = v2 - v1;
-            const clm::vec3 edge2 = v0 - v2;
-
-            {
-                const clm::vec3 normal = edge0.cross(edge1);
-                const float boxRadius =
-                    halfExtents.x * std::abs(normal.x) +
-                    halfExtents.y * std::abs(normal.y) +
-                    halfExtents.z * std::abs(normal.z);
-                if (std::abs(normal.dot(v0)) > boxRadius)
-                    return false;
-            }
-
-            const clm::vec3 edges[3] = {edge0, edge1, edge2};
-            const clm::vec3 boxAxes[3] = {
-                clm::vec3(1.0f, 0.0f, 0.0f),
-                clm::vec3(0.0f, 1.0f, 0.0f),
-                clm::vec3(0.0f, 0.0f, 1.0f)};
-
-            for (const clm::vec3 &edge : edges)
-            {
-                for (const clm::vec3 &boxAxis : boxAxes)
-                {
-                    const clm::vec3 axis = edge.cross(boxAxis);
-
-                    const float projection0 = axis.dot(v0);
-                    const float projection1 = axis.dot(v1);
-                    const float projection2 = axis.dot(v2);
-
-                    const float triangleMin = std::min({projection0, projection1, projection2});
-                    const float triangleMax = std::max({projection0, projection1, projection2});
-
-                    const float boxRadius =
-                        halfExtents.x * std::abs(axis.x) +
-                        halfExtents.y * std::abs(axis.y) +
-                        halfExtents.z * std::abs(axis.z);
-
-                    if (triangleMin > boxRadius || triangleMax < -boxRadius)
-                        return false;
-                }
-            }
-
-            return true;
-        }
-
         bool intersectsRay(const clm::vec3 &origin, const clm::vec3 &invDir) const
         {
             float tMin = std::numeric_limits<float>::lowest();
@@ -164,16 +102,12 @@ namespace CL
             float y = fabsf(centroidBox.max.y - centroidBox.min.y);
             float z = fabsf(centroidBox.max.z - centroidBox.min.z);
 
-            uint32_t leftIndex = static_cast<uint32_t>(nodes.size());
-            uint32_t rightIndex = leftIndex + 1;
-            nodes.emplace_back();
-            nodes.emplace_back();
-            nodes[currNodeIndex].leftIndex = leftIndex;
-
             auto midPoint = [](float min, float max)
             {
                 return min + (max - min) / 2;
             };
+
+            std::vector<Triangle> leftTris, rightTris;
 
             if (x > y && x > z)
             {
@@ -182,9 +116,9 @@ namespace CL
                 for (const Triangle &triangle : nodes[currNodeIndex].triangles)
                 {
                     if (triangle.centroid().x < mid)
-                        nodes[leftIndex].triangles.push_back(triangle);
+                        leftTris.push_back(triangle);
                     else
-                        nodes[rightIndex].triangles.push_back(triangle);
+                        rightTris.push_back(triangle);
                 }
             }
             else if (y > x && y > z)
@@ -194,9 +128,9 @@ namespace CL
                 for (const Triangle &triangle : nodes[currNodeIndex].triangles)
                 {
                     if (triangle.centroid().y < mid)
-                        nodes[leftIndex].triangles.push_back(triangle);
+                        leftTris.push_back(triangle);
                     else
-                        nodes[rightIndex].triangles.push_back(triangle);
+                        rightTris.push_back(triangle);
                 }
             }
             else
@@ -206,11 +140,22 @@ namespace CL
                 for (const Triangle &triangle : nodes[currNodeIndex].triangles)
                 {
                     if (triangle.centroid().z < mid)
-                        nodes[leftIndex].triangles.push_back(triangle);
+                        leftTris.push_back(triangle);
                     else
-                        nodes[rightIndex].triangles.push_back(triangle);
+                        rightTris.push_back(triangle);
                 }
             }
+
+            if (leftTris.empty() || rightTris.empty())
+                return;
+
+            const uint32_t leftIndex = static_cast<uint32_t>(nodes.size());
+            const uint32_t rightIndex = leftIndex + 1;
+            nodes.emplace_back();
+            nodes.emplace_back();
+            nodes[leftIndex].triangles = std::move(leftTris);
+            nodes[leftIndex + 1].triangles = std::move(rightTris);
+            nodes[currNodeIndex].leftIndex = leftIndex;
 
             nodes[currNodeIndex].triangles.clear();
             nodes[currNodeIndex].triangles.shrink_to_fit();
