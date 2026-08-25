@@ -19,7 +19,7 @@ else {
     $OptimizationFlags = @("-O0", "-g")
 }
 
-g++ $SourceFile src/editor/editorClient.cpp src/editor/editorRendering.cpp src/raytracer/raytracer.cpp src/scene/modelLoader.cpp -o build/main.exe `
+g++ $SourceFile src/editor/client.cpp src/editor/rasterization.cpp src/raytracer/raytracer.cpp src/raytracer/bvh.cpp src/scene/modelLoader.cpp -o build/main.exe `
     -std=c++20 `
     @OptimizationFlags `
     -pthread `
