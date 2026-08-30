@@ -12,7 +12,7 @@ if ($UseOptimizations) {
         "-O3", "-DNDEBUG", "-flto=auto", "-march=native", "-mtune=native",
         "-fno-math-errno", "-fno-trapping-math", "-fno-signed-zeros",
         "-freciprocal-math", "-fassociative-math", "-ffp-contract=fast",
-        "-funroll-loops"
+        "-funroll-loops", "-mprefer-vector-width=128"
     )
 }
 else {
