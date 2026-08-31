@@ -30,21 +30,22 @@ namespace CL
 
         bool run(Vertex inVertex, clm::vec3 &outVerticesClip, clm::vec3 &outNormal)
         {
-            const clm::vec4 world = modelMat * clm::vec4(inVertex.pos, 1.f);
-            const clm::vec4 view = viewMat * world;
+            const clm::vec4 view = viewMat * modelMat * clm::vec4(inVertex.pos, 1.f);
 
             if (view.z < zNear)
                 return false;
 
-            const clm::vec4 pointClip = projectionMat * view;
+            const clm::vec4 clip = projectionMat * view;
 
             {
                 outNormal = (modelMat * inVertex.normal).normalized();
             }
 
-            outVerticesClip = clm::vec3(clm::signedToUnitRange(pointClip.x / pointClip.w) * windowSize.x,
-                             clm::signedToUnitRange(pointClip.y / pointClip.w) * windowSize.y,
-                             view.z);
+            {
+                outVerticesClip = clm::vec3(clm::signedToUnitRange(clip.x / clip.w) * windowSize.x,
+                                            clm::signedToUnitRange(clip.y / clip.w) * windowSize.y,
+                                            clip.z / clip.w);
+            }
 
             return true;
         }

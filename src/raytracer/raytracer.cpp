@@ -38,23 +38,23 @@ namespace CL
 
         const float determinant = edge01.dot(rayCrossEdge02);
 
-        if (std::abs(determinant) < EPSILON)
+        if (std::fabsf(determinant) < EPSILON)
             return false;
 
-        outIsFrontFace = determinant > 0.0f;
+        outIsFrontFace = determinant > 0.f;
 
-        const float inverseDeterminant = 1 / determinant;
+        const float inverseDeterminant = 1.f / determinant;
         const clm::vec3 vertex0ToRayOrigin = rayOrigin - vertices[0].pos;
         const float barycentricU = inverseDeterminant * vertex0ToRayOrigin.dot(rayCrossEdge02);
 
-        if (barycentricU < 0.0 || barycentricU > 1.0)
+        if (barycentricU < 0.f || barycentricU > 1.f)
             return false;
 
         const clm::vec3 originCrossEdge01 = vertex0ToRayOrigin.cross(edge01);
 
         const float barycentricV = inverseDeterminant * rayDir.dot(originCrossEdge01);
 
-        if (barycentricV < 0.0 || barycentricU + barycentricV > 1.0)
+        if (barycentricV < 0.f || barycentricU + barycentricV > 1.f)
             return false;
 
         const float rayDistance = inverseDeterminant * edge02.dot(originCrossEdge01);
@@ -72,21 +72,21 @@ namespace CL
 
     clm::vec3 computeBarycentric(const std::array<Vertex, 3> &vertices, clm::vec3 p)
     {
-        clm::vec3 edge1 = vertices[1].pos - vertices[0].pos;
-        clm::vec3 edge2 = vertices[2].pos - vertices[0].pos;
-        clm::vec3 edge3 = p - vertices[0].pos;
+        const clm::vec3 edge1 = vertices[1].pos - vertices[0].pos;
+        const clm::vec3 edge2 = vertices[2].pos - vertices[0].pos;
+        const clm::vec3 edge3 = p - vertices[0].pos;
 
-        float dot11 = edge1.dot(edge1);
-        float dot12 = edge1.dot(edge2);
-        float dot22 = edge2.dot(edge2);
-        float dot31 = edge3.dot(edge1);
-        float dot32 = edge3.dot(edge2);
+        const float dot11 = edge1.dot(edge1);
+        const float dot12 = edge1.dot(edge2);
+        const float dot22 = edge2.dot(edge2);
+        const float dot31 = edge3.dot(edge1);
+        const float dot32 = edge3.dot(edge2);
 
-        float denominator = dot11 * dot22 - dot12 * dot12;
+        const float denominator = dot11 * dot22 - dot12 * dot12;
 
-        float weightB = (dot22 * dot31 - dot12 * dot32) / denominator;
-        float weightC = (dot11 * dot32 - dot12 * dot31) / denominator;
-        float weightA = 1.0f - weightB - weightC;
+        const float weightB = (dot22 * dot31 - dot12 * dot32) / denominator;
+        const float weightC = (dot11 * dot32 - dot12 * dot31) / denominator;
+        const float weightA = 1.0f - weightB - weightC;
 
         return clm::vec3(weightA, weightB, weightC);
     }
@@ -95,7 +95,7 @@ namespace CL
     {
         HitData hit;
 
-        std::vector<uint32_t> hitLeaves = bvh.getHitLeaves(ray.origin, ray.direction);
+        const std::vector<uint32_t> hitLeaves = bvh.getHitLeaves(ray.origin, ray.direction);
 
         uint32_t pickedTriangle = INVALID_INDEX;
         uint32_t pickedLeave = INVALID_INDEX;
@@ -103,7 +103,7 @@ namespace CL
         bool pickedTriangleIsFrontFace;
         float closestDistance = std::numeric_limits<float>::max();
 
-        for (uint32_t leave : hitLeaves)
+        for (const uint32_t leave : hitLeaves)
         {
             for (uint32_t i = 0; i < bvh.nodes[leave].triangles.size(); i++)
             {
@@ -132,12 +132,12 @@ namespace CL
 
             hit.materialIndex = bvh.nodes[pickedLeave].triangles[pickedTriangle].material;
 
-            clm::vec3 barycentric = computeBarycentric(vertices, pickedIntersectionPoint);
+            const clm::vec3 barycentric = computeBarycentric(vertices, pickedIntersectionPoint);
 
-            clm::vec3 smoothNormal = vertices[0].normal * barycentric.x + vertices[1].normal * barycentric.y + vertices[2].normal * barycentric.z;
+            const clm::vec3 smoothNormal = vertices[0].normal * barycentric.x + vertices[1].normal * barycentric.y + vertices[2].normal * barycentric.z;
             hit.normal = smoothNormal.normalized();
 
-            clm::vec2 texelCoord =
+            const clm::vec2 texelCoord =
                 vertices[0].tex * barycentric.x +
                 vertices[1].tex * barycentric.y +
                 vertices[2].tex * barycentric.z;
